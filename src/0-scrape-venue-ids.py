@@ -1,3 +1,4 @@
+#%%
 import time
 import pandas as pd
 from bs4 import BeautifulSoup
@@ -22,8 +23,9 @@ def build_geekswhodrink_venue_search_url(location):
   url = f'{base_url}?{query_string}'
   return url
 
-def scrape_geekswhodrink_venues_given_location(driver, location):
-  url = build_geekswhodrink_venue_search_url(location)
+def scrape_geekswhodrink_venues_given_location(driver):
+  # url = build_geekswhodrink_venue_search_url(location)
+  url = 'https://www.geekswhodrink.com/venues/'
   driver.get(url)
   time.sleep(3)
   soup = BeautifulSoup(driver.page_source, 'html.parser')
@@ -46,5 +48,7 @@ def scrape_geekswhodrink_venues_given_location(driver, location):
       
   return(pd.DataFrame(data))
 
-venues = scrape_geekswhodrink_venues_given_location(driver, 'austin')
-venues.to_csv('venues.csv', index=False)
+#%%
+venues = scrape_geekswhodrink_venues_given_location(driver)
+venues.to_csv('../all-venues.csv', index=False)
+#%%
