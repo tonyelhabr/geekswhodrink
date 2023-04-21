@@ -33,6 +33,7 @@ scrape_tables_from_geekswhodrink_venue_page <- function(venue_id, page) {
   quiz_dates <- session$html_elements('.quiz__title') |> html_text2()
   n_quiz_dates <- length(quiz_dates)
   if (n_quiz_dates == 0) {
+    session$session$close()
     stop('No quiz dates found.')
   }
   Sys.sleep(runif(1, min = 1, max = 2))
@@ -44,6 +45,7 @@ scrape_tables_from_geekswhodrink_venue_page <- function(venue_id, page) {
   
   n_tbs <- length(tbs)
   if (n_tbs == 0) {
+    session$session$close()
     stop('No tables found.')
   }
   
@@ -54,11 +56,12 @@ scrape_tables_from_geekswhodrink_venue_page <- function(venue_id, page) {
     }
   }
   
-  
-  bind_rows(
+  res <- bind_rows(
     set_names(tbs, quiz_dates),
     .id = 'quiz_date'
   )
+  session$session$close()
+  res
 }
 
 safely_quietly_scrape_tables_from_geekswhodrink_venue_page <- safely(
