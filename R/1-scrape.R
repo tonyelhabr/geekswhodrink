@@ -77,6 +77,7 @@ scrape_geekswhodrink_venue_quiz_results <- function(venue_id) {
   page_links <- p1_session$html_elements('.quiz__pag') |>
     html_children() |>
     html_text2()
+  p1_session$session$close()
   if (length(page_links) == 0) {
     cli_abort("Couldn't find any page links on the first page of the venue.")
     res <- safely_quietly_scrape_tables_from_geekswhodrink_venue_page(venue_id, page = 1)
@@ -135,6 +136,7 @@ scrape_and_cache_geekswhodrink_venue_quiz_results <- function(venue_id, overwrit
 
 quiz_results <- map_dfr(
   venues$venue_id,
+  # 229796426,
   scrape_and_cache_geekswhodrink_venue_quiz_results
 )
 
