@@ -7,11 +7,13 @@ library(lubridate)
 library(tibble)
 library(readr)
 
-venues <- read_csv('all-venues.csv')
-DATA_DIR <- 'data/all'
-dir.create(DATA_DIR, showWarnings = FALSE, recursive = TRUE)
-
 BASE_URL <- 'https://www.geekswhodrink.com/'
+INPUT_DATA_DIR <- 'data/raw'
+OUTPUT_DATA_DIR <- 'data/raw/all'
+dir.create(OUTPUT_DATA_DIR, showWarnings = FALSE, recursive = TRUE)
+
+venues <- read_csv(file.path(INPUT_DATA_DIR, 'all-venues.csv'))
+
 create_session_for_geekswhodrink_page <- function(venue_id, page = 1) {
   url <- paste0(BASE_URL, 'venues/', venue_id, '/?pag=', page)
   
@@ -59,7 +61,7 @@ scrape_tables_from_geekswhodrink_venue_page <- function(venue_id, page) {
   )
 }
 
-very_safely_scrape_tables_from_geekswhodrink_venue_page <- safely(
+safely_quietly_scrape_tables_from_geekswhodrink_venue_page <- safely(
   quietly(
     scrape_tables_from_geekswhodrink_venue_page
   )
@@ -73,8 +75,8 @@ scrape_geekswhodrink_venue_quiz_results <- function(venue_id) {
     html_children() |>
     html_text2()
   if (length(page_links) == 0) {
-    cli_abort("=Couldn't find any page links on the first page of the venue.")
-    res <- very_safely_scrape_tables_from_geekswhodrink_venue_page(venue_id, page = 1)
+    cli_abort("Couldn't find any page links on the first page of the venue.")
+    res <- safely_quietly_scrape_tables_from_geekswhodrink_venue_page(venue_id, page = 1)
     if (!is.null(res$result[['warning']])) {
       cli_warn(res$result[['warning']])
     }
@@ -88,7 +90,7 @@ scrape_geekswhodrink_venue_quiz_results <- function(venue_id) {
   tbs <- vector(mode = 'list', length = last_valid_page)
   for(i in seq_along(1:last_valid_page)) {
     cli_inform(c('i' = 'Scraping page {i}.'))
-    res <- very_safely_scrape_tables_from_geekswhodrink_venue_page(venue_id, page = i)
+    res <- safely_quietly_scrape_tables_from_geekswhodrink_venue_page(venue_id, page = i)
     if (!is.null(res$error)) {
       cli_warn(res$error)
       break
@@ -113,7 +115,7 @@ possibly_scrape_geekswhodrink_venue_quiz_results <- possibly(
 )
 
 scrape_and_cache_geekswhodrink_venue_quiz_results <- function(venue_id, overwrite = FALSE) {
-  path <- file.path(DATA_DIR, paste0(venue_id, '.csv'))
+  path <- file.path(OUTPUT_DATA_DIR, paste0(venue_id, '.csv'))
   if (file.exists(path) & isFALSE(overwrite)) {
     cli_inform('Reading in pre-saved results for {.var venue_id} = {.val {venue_id}}.')
     return(read_csv(path, show_col_types = FALSE))
