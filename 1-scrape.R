@@ -4,11 +4,12 @@ library(purrr)
 library(dplyr)
 library(cli)
 library(lubridate)
+library(tibble)
 library(readr)
 
-venues <- read_csv('venues.csv')
-DATA_DIR <- 'data'
-dir.create(DATA_DIR, showWarnings = FALSE)
+venues <- read_csv('all-venues.csv')
+DATA_DIR <- 'data/all'
+dir.create(DATA_DIR, showWarnings = FALSE, recursive = TRUE)
 
 BASE_URL <- 'https://www.geekswhodrink.com/'
 create_session_for_geekswhodrink_page <- function(venue_id, page = 1) {
@@ -105,12 +106,19 @@ scrape_geekswhodrink_venue_quiz_results <- function(venue_id) {
 
 TIMESTAMP <- now()
 
+possibly_scrape_geekswhodrink_venue_quiz_results <- possibly(
+  scrape_geekswhodrink_venue_quiz_results,
+  otherwise = tibble(),
+  quiet = FALSE
+)
+
 scrape_and_cache_geekswhodrink_venue_quiz_results <- function(venue_id, overwrite = FALSE) {
   path <- file.path(DATA_DIR, paste0(venue_id, '.csv'))
   if (file.exists(path) & isFALSE(overwrite)) {
-    return(read_csv(path))
+    cli_inform('Reading in pre-saved results for {.var venue_id} = {.val {venue_id}}.')
+    return(read_csv(path, show_col_types = FALSE))
   }
-  res <- scrape_geekswhodrink_venue_quiz_results(venue_id) |> 
+  res <- possibly_scrape_geekswhodrink_venue_quiz_results(venue_id) |> 
     mutate(
       venue_id = venue_id,
       updated_at = !!TIMESTAMP,
@@ -120,23 +128,18 @@ scrape_and_cache_geekswhodrink_venue_quiz_results <- function(venue_id, overwrit
   res
 }
 
-safely_scrape_and_cache_geekswhodrink_venue_quiz_results <- safely(
-  scrape_and_cache_geekswhodrink_venue_quiz_results,
-  otherwise = NULL, 
-  quiet = FALSE
-)
-
 quiz_results <- map_dfr(
   venues$venue_id,
-  safely_scrape_and_cache_geekswhodrink_venue_quiz_results
+  scrape_and_cache_geekswhodrink_venue_quiz_results
 )
 
 quiz_results |> 
   transmute(
     venue_id,
+    # updated_at,
     across(quiz_date, ~mdy(quiz_date)),
     placing = `Place Ranking`,
     team = `Team Name`,
     score = `Score`
   ) |> 
-  write_csv('quiz-results.csv', na = '')
+  write_csv('all-quiz-results.csv', na = '')
