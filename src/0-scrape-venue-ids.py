@@ -1,10 +1,13 @@
 #%%
+import os
 import time
 import pandas as pd
 from bs4 import BeautifulSoup
 from selenium import webdriver
 import chromedriver_autoinstaller
 
+OUTPUT_DIR = 'data/final'
+os.makedirs(OUTPUT_DIR)
 chromedriver_autoinstaller.install()
 chrome_options = webdriver.ChromeOptions()    
 options = [
@@ -48,7 +51,6 @@ def scrape_geekswhodrink_venues_given_location(driver):
       
   return(pd.DataFrame(data))
 
-#%%
 venues = scrape_geekswhodrink_venues_given_location(driver)
-venues.to_csv('../all-venues.csv', index=False)
-#%%
+venues.to_csv('data/final/venues.csv', index=False)
+

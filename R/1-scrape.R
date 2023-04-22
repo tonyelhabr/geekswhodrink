@@ -1,5 +1,4 @@
-## pak::pak('tidyverse/rvest@chromote')
-library(rvest) ## need chromote version
+library(rvest)
 library(purrr)
 library(dplyr)
 library(cli)
@@ -8,11 +7,12 @@ library(tibble)
 library(readr)
 
 BASE_URL <- 'https://www.geekswhodrink.com/'
-INPUT_DATA_DIR <- 'data/raw'
-OUTPUT_DATA_DIR <- 'data/raw/all'
-dir.create(OUTPUT_DATA_DIR, showWarnings = FALSE, recursive = TRUE)
+RAW_DATA_DIR <- file.path('data', 'raw')
+FINAL_DATA_DIR <- file.path('data', 'final')
+dir.create(RAW_DATA_DIR, showWarnings = FALSE, recursive = TRUE)
+dir.create(FINAL_DATA_DIR, showWarnings = FALSE)
 
-venues <- read_csv(file.path(INPUT_DATA_DIR, 'all-venues.csv'))
+venues <- read_csv(file.path(FINAL_DATA_DIR, 'venues.csv'))
 
 create_session_for_geekswhodrink_page <- function(venue_id, page = 1) {
   url <- paste0(BASE_URL, 'venues/', venue_id, '/?pag=', page)
@@ -119,7 +119,7 @@ possibly_scrape_geekswhodrink_venue_quiz_results <- possibly(
 )
 
 scrape_and_cache_geekswhodrink_venue_quiz_results <- function(venue_id, overwrite = FALSE) {
-  path <- file.path(OUTPUT_DATA_DIR, paste0(venue_id, '.csv'))
+  path <- file.path(RAW_DATA_DIR, paste0(venue_id, '.csv'))
   if (file.exists(path) & isFALSE(overwrite)) {
     cli_inform('Reading in pre-saved results for {.var venue_id} = {.val {venue_id}}.')
     return(read_csv(path, show_col_types = FALSE))
@@ -136,7 +136,6 @@ scrape_and_cache_geekswhodrink_venue_quiz_results <- function(venue_id, overwrit
 
 quiz_results <- map_dfr(
   venues$venue_id,
-  # 229796426,
   scrape_and_cache_geekswhodrink_venue_quiz_results
 )
 
@@ -149,4 +148,4 @@ quiz_results |>
     team = `Team Name`,
     score = `Score`
   ) |> 
-  write_csv('all-quiz-results.csv', na = '')
+  write_csv(file.path(FINAL_DATA_DIR, 'all-quiz-results.csv'), na = '')
