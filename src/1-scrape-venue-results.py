@@ -10,13 +10,12 @@ from datetime import datetime
 
 TIMESTAMP = datetime.now()
 BASE_URL = 'https://www.geekswhodrink.com/'
-INPUT_DATA_DIR = 'data/raw'
-OUTPUT_DATA_DIR = 'data/intermediate'
-RAW_DATA_DIR = 'data/raw/all'
-os.makedirs(OUTPUT_DATA_DIR, exist_ok=True)
+FINAL_DATA_DIR = 'data/final'
+RAW_DATA_DIR = 'data/raw'
+os.makedirs(FINAL_DATA_DIR, exist_ok=True)
 os.makedirs(RAW_DATA_DIR, exist_ok=True)
 
-venues = pd.read_csv(os.path.join(INPUT_DATA_DIR, 'all-venues.csv'))
+venues = pd.read_csv(os.path.join(FINAL_DATA_DIR, 'all-venues.csv'))
 
 def possibly(otherwise=None):
     def decorator(func):
@@ -140,13 +139,4 @@ quiz_results = quiz_results.rename(columns={
 # Assuming you have pandas.to_datetime function imported
 quiz_results['quiz_date'] = pd.to_datetime(quiz_results['quiz_date'], format='%m-%d-%Y')
 
-quiz_results.to_csv(os.path.join(OUTPUT_DATA_DIR, 'all-quiz-results.csv'), index=False)
-
-#%%
-@safely
-def example_function(x, y):
-    return x / y
-
-result = example_function(1, 0)
-print(result)
-#%%
+quiz_results.to_csv(os.path.join(FINAL_DATA_DIR, 'quiz-results.csv'), index=False)

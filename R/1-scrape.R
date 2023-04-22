@@ -142,7 +142,6 @@ quiz_results <- map_dfr(
 quiz_results |> 
   transmute(
     venue_id,
-    # updated_at,
     across(quiz_date, ~mdy(quiz_date)),
     placing = `Place Ranking`,
     team = `Team Name`,
