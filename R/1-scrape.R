@@ -12,7 +12,7 @@ FINAL_DATA_DIR <- file.path('data', 'final')
 dir.create(RAW_DATA_DIR, showWarnings = FALSE, recursive = TRUE)
 dir.create(FINAL_DATA_DIR, showWarnings = FALSE)
 
-venues <- read_csv(file.path(FINAL_DATA_DIR, 'venues.csv'))
+venues <- read_csv('https://github.com/tonyelhabr/geekswhodrink/releases/download/data/austin-venues.csv')
 
 create_session_for_geekswhodrink_page <- function(venue_id, page = 1) {
   url <- paste0(BASE_URL, 'venues/', venue_id, '/?pag=', page)
@@ -134,12 +134,26 @@ scrape_and_cache_geekswhodrink_venue_quiz_results <- function(venue_id, overwrit
   res
 }
 
-quiz_results <- map_dfr(
+write_geekswhodrink_release <- function(x, name, tag = 'data') {
+  temp_dir <- tempdir(check = TRUE)
+  basename <- sprintf('%s.csv', name)
+  temp_path <- file.path(temp_dir, basename)
+  write_csv(x, temp_path, na = '')
+  pb_upload(
+    temp_path,
+    repo = 'tonyelhabr/geekswhodrink',
+    tag = tag
+  )
+}
+
+quiz_results <- map(
   venues$venue_id,
   scrape_and_cache_geekswhodrink_venue_quiz_results
 )
 
 quiz_results |> 
+  discard(~nrow(.x) == 0) |> 
+  bind_rows() |> 
   transmute(
     venue_id,
     across(quiz_date, ~mdy(quiz_date)),
@@ -147,4 +161,4 @@ quiz_results |>
     team = `Team Name`,
     score = `Score`
   ) |> 
-  write_csv(file.path(FINAL_DATA_DIR, 'all-quiz-results.csv'), na = '')
+  write_geekswhodrink_release('quiz-results')
