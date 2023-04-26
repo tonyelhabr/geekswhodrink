@@ -1,0 +1,30 @@
+name: Test rvest on GHA
+
+on:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: macOS-latest
+    env:
+      GITHUB_PAT: ${{ secrets.GEEKS_WHO_DRINK_TOKEN }}
+      RENV_PATHS_ROOT: ~/.local/share/renv
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Setup R 
+        uses: r-lib/actions/setup-r@v2
+      - name: Cache packages
+        uses: actions/cache@v3
+        with:
+          path: ${{ env.RENV_PATHS_ROOT }}
+          key: ${{ runner.os }}-renv-${{ hashFiles('**/renv.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-renv-
+      - name: Restore packages
+        shell: Rscript {0}
+        run: |
+          if (!requireNamespace("renv", quietly = TRUE)) install.packages("renv")
+          renv::restore()
+      - name: Compare rankings
+        run: Rscript -e 'source(file.path("R", "0-test.R"), echo = TRUE)'
