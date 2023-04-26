@@ -1,5 +1,6 @@
 library(rvest)
 library(readr)
+library(chromote)
 
 BASE_URL <- 'https://www.geekswhodrink.com/'
 
