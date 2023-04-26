@@ -27,6 +27,68 @@
         "sys"
       ]
     },
+    "assertive.base": {
+      "Package": "assertive.base",
+      "Version": "0.0-9",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "b13489d382536049f19cd7b205fbc12a",
+      "Requirements": []
+    },
+    "assertive.numbers": {
+      "Package": "assertive.numbers",
+      "Version": "0.0-2",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "cf44804c431986c64dfd2f577031c9f4",
+      "Requirements": [
+        "assertive.base"
+      ]
+    },
+    "assertive.properties": {
+      "Package": "assertive.properties",
+      "Version": "0.0-5",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "78281e9da959f070ee617331ba876fde",
+      "Requirements": [
+        "assertive.base"
+      ]
+    },
+    "assertive.sets": {
+      "Package": "assertive.sets",
+      "Version": "0.0-3",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "7e10f191b5d6f423fb0e056096e4cc96",
+      "Requirements": [
+        "assertive.base"
+      ]
+    },
+    "assertive.strings": {
+      "Package": "assertive.strings",
+      "Version": "0.0-3",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "562f6445125dad322cb8f57c26286713",
+      "Requirements": [
+        "assertive.base",
+        "assertive.types",
+        "stringi"
+      ]
+    },
+    "assertive.types": {
+      "Package": "assertive.types",
+      "Version": "0.0-3",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "c4837a5ed530b4327914b54a2644990e",
+      "Requirements": [
+        "assertive.base",
+        "assertive.properties",
+        "codetools"
+      ]
+    },
     "bit": {
       "Package": "bit",
       "Version": "4.0.5",
@@ -65,6 +127,14 @@
       "Source": "Repository",
       "Repository": "CRAN",
       "Hash": "3f038e5ac7f41d4ac41ce658c85e3042",
+      "Requirements": []
+    },
+    "codetools": {
+      "Package": "codetools",
+      "Version": "0.2-18",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "019388fc48e48b3da0d3a76ff94608a8",
       "Requirements": []
     },
     "cpp11": {
@@ -578,6 +648,30 @@
       "RemoteSha": "ab2078976c9ab57116c7c9175632e7d19d45273f",
       "Hash": "db99da07bbdbe4e861028aa9d29ff63e",
       "Requirements": []
+    },
+    "yelp": {
+      "Package": "yelp",
+      "Version": "0.0-3",
+      "Source": "GitHub",
+      "RemoteType": "github",
+      "RemoteHost": "api.github.com",
+      "RemoteUsername": "richierocks",
+      "RemoteRepo": "yelp",
+      "RemoteRef": "master",
+      "RemoteSha": "7b9bce77d12ad9bb7af2919477560e6a877367f6",
+      "Hash": "06a94afb9be88ce67cd2261363c53d78",
+      "Requirements": [
+        "assertive.base",
+        "assertive.numbers",
+        "assertive.sets",
+        "assertive.strings",
+        "assertive.types",
+        "httr",
+        "lubridate",
+        "magrittr",
+        "purrr",
+        "tibble"
+      ]
     }
   }
 }
