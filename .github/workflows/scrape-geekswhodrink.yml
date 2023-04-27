@@ -1,6 +1,8 @@
-name: Test rvest on GHA
+name: Scrape Geeks Who Drink quiz results
 
 on:
+  schedule:
+    - cron: '0 7 * * 1'
   workflow_dispatch:
 
 jobs:
@@ -26,5 +28,5 @@ jobs:
         run: |
           if (!requireNamespace("renv", quietly = TRUE)) install.packages("renv")
           renv::restore()
-      - name: Compare rankings
-        run: Rscript -e 'source(file.path("R", "0-test.R"), echo = TRUE)'
+      - name: Scrape past week's Geeks Who Drink quiz results
+        run: Rscript -e 'source(file.path("R", "1-scrape-geekswhodrink.R"), echo = TRUE)'
