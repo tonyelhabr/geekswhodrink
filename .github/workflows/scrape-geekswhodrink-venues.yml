@@ -1,0 +1,25 @@
+## Reference: https://github.com/MarketingPipeline/Python-Selenium-Action
+name: Run club rankings scraper
+
+on:
+  schedule:
+    - cron: '0 10 * * *'
+  workflow_dispatch:
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    env:
+      GEEKS_WHO_DRINK_TOKEN: ${{ secrets.GEEKS_WHO_DRINK_TOKEN }}
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+          cache: 'pip'
+      - run: pip install -r requirements.txt 
+      - name: Remove previous chrome instances on runner 
+        run: sudo apt purge google-chrome-stable
+      - name: Run the script
+        run: python src/0-scrape-geekswhodrink-venues.py
+

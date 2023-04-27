@@ -1,13 +1,12 @@
 #%%
-import os
 import time
 import pandas as pd
 from bs4 import BeautifulSoup
 from selenium import webdriver
 import chromedriver_autoinstaller
+from datetime import datetime
 from utils import create_or_update_geekswhodrink_release
 
-os.makedirs(OUTPUT_DIR)
 chromedriver_autoinstaller.install()
 chrome_options = webdriver.ChromeOptions()    
 options = [
@@ -19,15 +18,7 @@ for option in options:
 
 driver = webdriver.Chrome(options = chrome_options)
 
-def build_geekswhodrink_venue_search_url(location):
-  base_url = 'https://www.geekswhodrink.com/venues/'
-  query_params = {'search': '', 'location': location}
-  query_string = '&'.join([f'{key}={value}' for key, value in query_params.items()])
-  url = f'{base_url}?{query_string}'
-  return url
-
 def scrape_geekswhodrink_venues_given_location(driver):
-  # url = build_geekswhodrink_venue_search_url(location)
   url = 'https://www.geekswhodrink.com/venues/'
   driver.get(url)
   time.sleep(3)
@@ -52,6 +43,9 @@ def scrape_geekswhodrink_venues_given_location(driver):
   return(pd.DataFrame(data))
 
 venues = scrape_geekswhodrink_venues_given_location(driver)
+current_time = datetime.now()
+venues['updated_at'] = current_time.strftime('%Y-%m-%d %H:%M:%S')
+
 create_or_update_geekswhodrink_release(
   df=venues,
   file_name='venues.csv'
