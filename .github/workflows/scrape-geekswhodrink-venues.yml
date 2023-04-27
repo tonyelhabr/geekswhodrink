@@ -1,9 +1,9 @@
 ## Reference: https://github.com/MarketingPipeline/Python-Selenium-Action
-name: Run club rankings scraper
+name: Scrape Geeks Who Drink venues
 
 on:
   schedule:
-    - cron: '0 10 * * *'
+    - cron: '0 6 * * 1'
   workflow_dispatch:
 
 jobs:
@@ -20,6 +20,6 @@ jobs:
       - run: pip install -r requirements.txt 
       - name: Remove previous chrome instances on runner 
         run: sudo apt purge google-chrome-stable
-      - name: Run the script
+      - name: Scrape venues
         run: python src/0-scrape-geekswhodrink-venues.py
 
