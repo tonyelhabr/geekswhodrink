@@ -46,9 +46,9 @@ new_quiz_results <- nested_existing_quiz_results |>
   imap_dfr(
     ~{
       i <- which(.y == names(nested_existing_quiz_results))
-      cli_inform(c('i' = 'Scraping {i} of {length(nested_existing_quiz_results)} previously scraped venues.'))
+      cli_inform('Scraping {i} of {length(nested_existing_quiz_results)} previously scraped venues.')
       scrape_and_bind_geekswhodrink_venue_quiz_results(
-        venue_id = as.integer(.y),
+        venue_id = as.numeric(.y), ## although venue_ids are integer-like, they are too big to be integers (floating point overflow)
         existing_quiz_results = .x,
         max_page = 1
       )
@@ -61,7 +61,7 @@ completely_new_quiz_results <- map(
   previously_unscraped_venue_ids,
   ~{
     i <- which(.x == names(previously_unscraped_venue_ids))
-    cli_inform(c('i' = 'Trying to scrape {i} of {length(previously_unscraped_venue_ids)} previously unscraped venues.'))
+    cli_inform('Trying to scrape {i} of {length(previously_unscraped_venue_ids)} previously unscraped venues.')
     scrape_and_bind_geekswhodrink_venue_quiz_results(
       venue_id = .x,
       existing_quiz_results = tibble(),
@@ -75,14 +75,4 @@ bind_rows(
   completely_new_quiz_results
 ) |> 
   write_geekswhodrink_release('quiz-results')
-quiz_results |> 
-  discard(~nrow(.x) == 0) |> 
-  bind_rows() |> 
-  transmute(
-    venue_id,
-    across(quiz_date, ~mdy(quiz_date)),
-    placing = `Place Ranking`,
-    team = `Team Name`,
-    score = `Score`
-  ) |> 
-  write_geekswhodrink_release('quiz-results')
+
