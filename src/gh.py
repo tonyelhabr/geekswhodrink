@@ -71,7 +71,7 @@ def create_or_update_release(
     asset = release.upload_asset_from_memory(
       file_like=file_content,
       file_size=len(file_content),
-      name=file_name,
+      name=file_name
     )
     print(f'File uploaded: {asset.name}')
   except GithubException as e:
