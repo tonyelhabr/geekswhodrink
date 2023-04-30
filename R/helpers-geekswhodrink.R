@@ -18,6 +18,12 @@ read_geekswhodrink_release <- function(name, tag = 'data', show_col_types = FALS
   )
 }
 
+safely_read_geekswhodrink_release <- safely(
+  read_geekswhodrink_release,
+  otherwise = tibble(),
+  quiet = TRUE
+)
+
 possibly_read_geekswhodrink_release <- possibly(
   read_geekswhodrink_release,
   otherwise = tibble(),
