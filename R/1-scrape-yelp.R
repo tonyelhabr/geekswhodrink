@@ -17,7 +17,7 @@ str_replace_address <- function(x, i) {
   str_replace(x, paste0('(^.*)', ADDRESS_SUFFIX_REGEX), sprintf('\\%s', i))
 }
 
-venues <- read_csv('https://github.com/tonyelhabr/geekswhodrink/releases/download/data/venues.csv') |> 
+venues <- read_geekswhodrink_release('venues', tag = 'data') |> 
   arrange(venue_id) |> 
   transmute(
     venue_id,
@@ -36,9 +36,9 @@ possibly_business_match <- possibly(
   quiet = FALSE
 )
 
-get_yelp_business_id <- function(venue_id, match_threshold = 'default') {
+get_yelp_business_match <- function(venue_id, match_threshold = 'default') {
   venue <- venues |> filter(.data$venue_id == .env$venue_id)
-  existing_business_id <- possibly_read_geekswhodrink_release(venue_id, tag = 'yelp-business-ids')
+  existing_business_id <- possibly_read_geekswhodrink_release(venue_id, tag = 'yelp-businesses')
   if (nrow(existing_business_id) > 0) {
     ## this is for when we've already tried to scrape with both default and none, yet neither worked, so we just saved the venue_id
     ##   in its own file, as a sentinel value to indicate that we shouldn't try scraping it anymore
@@ -77,12 +77,12 @@ get_yelp_business_id <- function(venue_id, match_threshold = 'default') {
   res$updated_at <- TIMESTAMP
   write_csv(res, path, na = '')
   if (isTRUE(should_try_no_match_threshold)) {
-    get_yelp_business_id(venue_id, match_threshold = 'none')
+    get_yelp_business_match(venue_id, match_threshold = 'none')
   }
   res
 }
 
-map_dfr_venues <- function(x, venue_ids = x, ...) {
+map_dfr_venues <- function(x, ..., venue_ids = x) {
   set_names(x, venue_ids) |> 
     map_dfr(..., .id = 'venue_id') |> 
     mutate(
@@ -92,8 +92,9 @@ map_dfr_venues <- function(x, venue_ids = x, ...) {
 
 yelp_businesses <- map_dfr_venues(
   venues$venue_id,
+  venue_ids = venues$venue_id,
   ~{
-    res <- get_yelp_business_id(.x)
+    res <- get_yelp_business_match(.x)
     mutate(
       res, 
       across(any_of('zip_code'), as.double),
@@ -173,7 +174,7 @@ get_yelp_business_info <- function(business_id) {
 
 yelp_business_info <- map_dfr_venues(
   scrapable_yelp_businesses$business_id,
-  scrapable_yelp_businesses$venue_id,
+  venue_ids = scrapable_yelp_businesses$venue_id,
   ~{
     res <- get_yelp_business_info(.x)
     mutate(
