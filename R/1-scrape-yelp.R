@@ -36,20 +36,21 @@ possibly_business_match <- possibly(
   quiet = FALSE
 )
 
-get_yelp_business_id <- function(venue_id, overwrite = FALSE) {
+get_yelp_business_id <- function(venue_id, match_threshold = 'default') {
   venue <- venues |> filter(.data$venue_id == .env$venue_id)
-  path <- file.path('data', 'yelp-businesses', paste0(venue_id, '.csv'))
-  match_threshold <- 'default'
-  if (file.exists(path) & !overwrite) {
-    res <- read_csv(path, show_col_types = FALSE)
-    if (nrow(res) > 0) {
-      cli_inform('Returning early for {.var venue_id} = {.val {venue_id}}.')
-      return(res)
-    } else {
+  existing_business_id <- possibly_read_geekswhodrink_release(venue_id, tag = 'yelp-business-ids')
+  if (nrow(existing_business_id) > 0) {
+    ## this is for when we've already tried to scrape with both default and none, yet neither worked, so we just saved the venue_id
+    ##   in its own file, as a sentinel value to indicate that we shouldn't try scraping it anymore
+    if (match_threshold == 'default') {
       cli_inform('Trying to re-scrape {.var venue_id} = {.val {venue_id}} with {.var match_threshold} = {.code "none"}.')
       match_threshold <- 'none'
+    } else {
+      cli_inform('Returning early for {.var venue_id} = {.val {venue_id}}.')
+      return(existing_business_id)
     }
   }
+  
   Sys.sleep(runif(1, min = 0.1, max = 1.5))
   cli_inform('Scraping {.var venue_id} = {.val {venue_id}}.')
   ## I think the API works best if you have lat + lon (and can enter dummy info for several other things)
@@ -68,20 +69,17 @@ get_yelp_business_id <- function(venue_id, overwrite = FALSE) {
     match_threshold = match_threshold
   )
   
-  has_no_rows <- nrow(res) == 0
-  should_try_no_match_threshold <- isTRUE(has_no_rows) & match_threshold == 'default'
+  should_try_no_match_threshold <- nrow(res) == 0& match_threshold == 'default'
+   if (isTRUE(should_try_no_match_threshold)) {
+     res <- tibble(venue_id = venue_id, updated_at = TIMESTAMP) 
+   }
   
+  res$updated_at <- TIMESTAMP
   write_csv(res, path, na = '')
   if (isTRUE(should_try_no_match_threshold)) {
-    get_yelp_business_id(venue_id, overwrite)
-  } else {
-    ## resort to 1-row record with no data, so that we don't try scraping it again
-    tibble(
-      venue_id = venue_id
-    ) |> 
-      write_csv(path, na = '')
+    get_yelp_business_id(venue_id, match_threshold = 'none')
   }
-  return(res)
+  res
 }
 
 map_dfr_venues <- function(x, venue_ids = x, ...) {
@@ -92,7 +90,7 @@ map_dfr_venues <- function(x, venue_ids = x, ...) {
     )
 }
 
-yelp_business_ids <- map_dfr_venues(
+yelp_businesses <- map_dfr_venues(
   venues$venue_id,
   ~{
     res <- get_yelp_business_id(.x)
@@ -104,12 +102,11 @@ yelp_business_ids <- map_dfr_venues(
   }
 )
 
-n_yelp_business_ids <- yelp_business_ids |> 
-  count(venue_id)
+n_yelp_businesses <- yelp_businesses |> count(venue_id)
 
-disambiguiated_yelp_business_ids <- yelp_business_ids |> 
+disambiguiated_yelp_businesses <- yelp_businesses |> 
   semi_join(
-    n_yelp_business_ids |> filter(n > 1L),
+    n_yelp_businesses |> filter(n > 1L),
     by = join_by(venue_id)
   ) |> 
   inner_join(
@@ -133,24 +130,24 @@ disambiguiated_yelp_business_ids <- yelp_business_ids |>
   ungroup() |> 
   select(venue_id, business_id) |> 
   inner_join(
-    yelp_business_ids,
+    yelp_businesses,
     by = join_by(venue_id, business_id)
   )
 
-chosen_yelp_business_ids <- bind_rows(
-  yelp_business_ids |> 
+chosen_yelp_businesses <- bind_rows(
+  yelp_businesses |> 
     semi_join(
-      n_yelp_business_ids |> filter(n == 1L),
+      n_yelp_businesses |> filter(n == 1L),
       by = join_by(venue_id)
     ),
-  disambiguiated_yelp_business_ids
+  disambiguiated_yelp_businesses
 ) |> 
   arrange(venue_id)
-
-yelp_business_info$updated_at <- TIMESTAMP
+scrapable_yelp_businesses <- chosen_yelp_businesses |> filter(!is.na(business_id))
+scrapable_yelp_businesses$updated_at <- TIMESTAMP
 write_geekswhodrink_release(
-  chosen_yelp_business_ids,
-  name = 'yelp-business-ids',
+  scrapable_yelp_businesses,
+  name = 'yelp-businesses',
   tag = 'data'
 )
 
@@ -160,24 +157,23 @@ possibly_business_lookup <- possibly(
   quiet = FALSE
 )
 
-get_yelp_business_info <- function(business_id, overwrite = FALSE) {
-  path <- file.path('data', 'yelp-business-info', paste0(business_id, '.csv'))
-  if (file.exists(path) & !overwrite) {
+get_yelp_business_info <- function(business_id) {
+  existing_business_info <- possibly_read_geekswhodrink_release(business_id, tag = 'yelp-business-info')
+  if (nrow(existing_business_info) > 0) {
     cli_inform('Returning early for {.var venue_id} = {.val {venue_id}}.')
-    res <- read_csv(path, show_col_types = FALSE)
-    return(res)
+    return(existing_business_info)
   }
   Sys.sleep(runif(1, min = 0.1, max = 1.5))
   cli_inform('Scraping {.var business_id} = {.val {business_id}}.')
   res <- possibly_business_lookup(business_id)
+  res$updated_at <- TIMESTAMP
   write_csv(res, path, na = '')
   res
 }
 
-scrapable_yelp_bussiness_ids <- chosen_yelp_business_ids |> filter(!is.na(business_id))
 yelp_business_info <- map_dfr_venues(
-  scrapable_yelp_bussiness_ids$business_id,
-  scrapable_yelp_bussiness_ids$venue_id,
+  scrapable_yelp_businesses$business_id,
+  scrapable_yelp_businesses$venue_id,
   ~{
     res <- get_yelp_business_info(.x)
     mutate(
@@ -188,7 +184,6 @@ yelp_business_info <- map_dfr_venues(
   }
 )
 
-yelp_business_info$updated_at <- TIMESTAMP
 write_geekswhodrink_release(
   yelp_business_info,
   name = 'yelp-business-info',
