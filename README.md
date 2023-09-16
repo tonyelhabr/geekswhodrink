@@ -20,6 +20,13 @@ Oh, and for the Austin locals, here is the same data, filtered to just the Austi
 | `austin-venues.csv` | [Download](https://github.com/tonyelhabr/geekswhodrink/releases/download/data/austin-venues.csv) |
 | `austin-quiz-results.csv` | [Download](https://github.com/tonyelhabr/geekswhodrink/releases/download/data/austin-quiz-results.csv) |
 
+### GitHub Actions
+
+| Action |
+| ------ |
+| [![Scrape Geeks Who Drink venues](https://github.com/tonyelhabr/geekswhodrink/actions/workflows/scrape-geekswhodrink-venues.yml/badge.svg)](https://github.com/tonyelhabr/geekswhodrink/actions/workflows/scrape-geekswhodrink-venues.yml) |
+[![Scrape Geeks Who Drink quiz results](https://github.com/tonyelhabr/geekswhodrink/actions/workflows/scrape-geekswhodrink-quiz-results.yml/badge.svg)](https://github.com/tonyelhabr/geekswhodrink/actions/workflows/scrape-geekswhodrink-quiz-results.yml)
+
 ### Dictionary
 
 #### venues.csv
