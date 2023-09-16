@@ -29,4 +29,4 @@ jobs:
           if (!requireNamespace("renv", quietly = TRUE)) install.packages("renv")
           renv::restore()
       - name: Scrape past week's Geeks Who Drink quiz results
-        run: Rscript -e 'source(file.path("R", "1-scrape-geekswhodrink.R"), echo = TRUE)'
+        run: Rscript -e 'source(file.path("R", "1-scrape-geekswhodrink.R"), echo = FALSE)'
