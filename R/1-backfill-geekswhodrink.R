@@ -1,11 +1,12 @@
-library(lubridate)
-library(dplyr)
-library(readr)
-library(purrr)
+suppressPackageStartupMessages(suppressWarnings({
+  library(lubridate)
+  library(dplyr)
+  library(purrr)
+}))
 
 source(file.path('R', 'helpers-geekswhodrink.R'))
 
-TIMESTAMP <- now()
+TIMESTAMP <- lubridate::now()
 scrape_and_cache_geekswhodrink_venue_quiz_results <- function(venue_id, overwrite = FALSE) {
   res <- possibly_scrape_geekswhodrink_venue_quiz_results(venue_id)
   if (nrow(res) > 0) {
@@ -19,9 +20,9 @@ scrape_and_cache_geekswhodrink_venue_quiz_results <- function(venue_id, overwrit
   res
 }
 
-venues <- read_geekswhodrink_release('venues') |> arrange(venue_id)
+venues <- read_geekswhodrink_release('venues') |> dplyr::arrange(venue_id)
 
-quiz_results <- map_dfr(
+quiz_results <- purrr::map_dfr(
   venues$venue_id,
   scrape_and_cache_geekswhodrink_venue_quiz_results
 )
