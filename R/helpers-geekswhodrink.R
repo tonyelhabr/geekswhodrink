@@ -10,9 +10,9 @@ suppressPackageStartupMessages(suppressWarnings({
 }))
 
 BASE_URL <- 'https://www.geekswhodrink.com/'
-
+REPO <- 'tonyelhabr/geekswhodrink'
 read_geekswhodrink_release <- function(name, tag = 'data', show_col_types = FALSE) {
-  url <- sprintf('https://github.com/tonyelhabr/geekswhodrink/releases/download/%s/%s.csv', tag, name)
+  url <- sprintf('https://github.com/%s/releases/download/%s/%s.csv', REPO, tag, name)
   readr::read_csv(
     url,
     show_col_types = show_col_types,
@@ -21,8 +21,7 @@ read_geekswhodrink_release <- function(name, tag = 'data', show_col_types = FALS
 
 safely_read_geekswhodrink_release <- purrr::safely(
   read_geekswhodrink_release,
-  otherwise = data.frame(),
-  quiet = TRUE
+  otherwise = data.frame()
 )
 
 possibly_read_geekswhodrink_release <- purrr::possibly(
@@ -38,7 +37,14 @@ write_geekswhodrink_release <- function(x, name, tag = 'data') {
   readr::write_csv(x, temp_path, na = '')
   piggyback::pb_upload(
     temp_path,
-    repo = 'tonyelhabr/geekswhodrink',
+    repo = REPO,
+    tag = tag
+  )
+}
+
+list_geekswhodrink_releases <- function(tag) {
+  piggyback::pb_list(
+    repo = REPO, 
     tag = tag
   )
 }
@@ -94,10 +100,11 @@ scrape_tables_from_geekswhodrink_venue_page <- function(venue_id, page, session 
   res
 }
 
+quietly_scrape_tables_from_geekswhodrink_venue_page <- purrr::quietly(
+  scrape_tables_from_geekswhodrink_venue_page
+)
 safely_quietly_scrape_tables_from_geekswhodrink_venue_page <- purrr::safely(
-  purrr::quietly(
-    scrape_tables_from_geekswhodrink_venue_page
-  ),
+  quietly_scrape_tables_from_geekswhodrink_venue_page,
   otherwise = data.frame(),
   quiet = FALSE
 )
@@ -115,7 +122,7 @@ clean_geekswhodrink_quiz_results <- function(df) {
 
 scrape_geekswhodrink_venue_quiz_results <- function(venue_id, max_page = NULL) {
   cli::cli_inform('Scraping {.var venue_id} = {.val {venue_id}}.')
-
+  
   p1_session <- create_session_for_geekswhodrink_page(venue_id, page = 1)
   Sys.sleep(stats::runif(1, min = 2, max = 3))
   page_links <- p1_session$html_elements('.quiz__pag') |>
@@ -157,10 +164,11 @@ scrape_geekswhodrink_venue_quiz_results <- function(venue_id, max_page = NULL) {
     cli::cli_inform(c('i' = 'Scraping page {i} for {.var venue_id} = {.val {venue_id}}.'))
     res <- safely_quietly_scrape_tables_from_geekswhodrink_venue_page(venue_id, page = i)
     if (!is.null(res$error)) {
-      cli::cli_warn(res$error)
+      cli::cli_warn(res$error$message)
       break
     } 
     if (!is.null(res$result[['warning']])) {
+      browser()
       cli::cli_warn(res$result[['warning']])
     }
     if (!is.null(res$result[['result']])) {
@@ -168,8 +176,9 @@ scrape_geekswhodrink_venue_quiz_results <- function(venue_id, max_page = NULL) {
     }
     Sys.sleep(stats::runif(1, min = 1, max = 3))
   }
-  res <- dplyr::bind_rows(tbs)
 
+  res <- dplyr::bind_rows(tbs)
+  
   if (nrow(res) == 0) {
     return(res)
   }
@@ -180,5 +189,5 @@ scrape_geekswhodrink_venue_quiz_results <- function(venue_id, max_page = NULL) {
 possibly_scrape_geekswhodrink_venue_quiz_results <- purrr::possibly(
   scrape_geekswhodrink_venue_quiz_results,
   otherwise = data.frame(),
-  quiet = FALSE
+  quiet = TRUE
 )
