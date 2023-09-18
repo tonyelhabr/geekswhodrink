@@ -77,8 +77,16 @@ scrape_tables_from_geekswhodrink_venue_page <- function(venue_id, page, session 
   tbs <- purrr::keep(
     all_tbs,
     ~all(c('Place Ranking', 'Team Name', 'Score') %in% colnames(.x))
-  )
-  
+  ) |> 
+    purrr::map(
+      \(.x) {
+        .x$`Place Ranking` <- as.integer(.x$`Place Ranking`)
+        .x$`Team Name` <- as.character(.x$`Team Name`)
+        .x$`Score` <- as.integer(.x$Score)
+        .x
+      }
+    )
+
   n_tbs <- length(tbs)
   if (n_tbs == 0) {
     session$session$close()
