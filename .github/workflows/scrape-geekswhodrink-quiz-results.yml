@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  test:
+  scrape:
     runs-on: macOS-latest
     env:
       GITHUB_PAT: ${{ secrets.GEEKS_WHO_DRINK_TOKEN }}
