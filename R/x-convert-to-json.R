@@ -8,47 +8,8 @@ suppressPackageStartupMessages(suppressWarnings({
 
 source(file.path('R', 'helpers-geekswhodrink.R'))
 
-# read_geekswhodrink_release(tag = 'venue-quiz-results', name = '2501863925') -> df
-# df <- data.frame(
-#   # venue_id = "foo",
-#   year = c(rep(2023, 4), rep(2022, 4)),
-#   week = c("01", "01", "02", "02", "03", "03", "04", "04"),
-#   team = rep(c("a", "b"), 4),
-#   score = c(1, 2, 3, 4, 11, 12, 13, 14)
-# )
-# 
-# split(
-#   df,
-#   df$year
-# ) |> 
-#   map(
-#     \(.x) {
-#       split(
-#         .x,
-#         .x$week
-#       ) |> 
-#         map(
-#           \(d) {
-#             map(
-#               d$team,
-#               \(team) {
-#                 d[d$team == team, ] |> 
-#                   dplyr::select(
-#                     team,
-#                     score
-#                   )
-#               }
-#             )
-#           }
-#         )
-#     }
-#   ) |> 
-#   toJSON(
-#     auto_unbox = TRUE,
-#     pretty = TRUE
-#   )
-
 existing_releases <- list_geekswhodrink_releases('venue-quiz-results') |> 
+  dplyr::filter(tools::file_path_sans_ext(file_name) == 'csv') |> 
   dplyr::mutate(
     venue_id = as.numeric(tools::file_path_sans_ext(file_name)),
     .before = 1
