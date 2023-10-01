@@ -26,7 +26,7 @@ TIMESTAMP <- now()
         raw$updated_at <- TIMESTAMP
       }
       cli_inform('Uploading {.x} of {length(existing_quiz_result_paths)} files.')
-      write_geekswhodrink_release(
+      write_geekswhodrink_release_csv(
         raw,
         str_remove(path, '\\.csv'),
         tag = 'venue-quiz-results'

@@ -67,7 +67,7 @@ judiciously_scrape_geekswhodrink_venue_quiz_results <- function(
       ## Temporary fix for files where I forgot to include updated_at
       if (isFALSE(any(colnames(existing_quiz_results) == 'updated_at'))) {
         existing_quiz_results$updated_at <- TIMESTAMP
-        write_geekswhodrink_release(
+        write_geekswhodrink_release_csv(
           existing_quiz_results,
           name = venue_id, 
           tag = 'venue-quiz-results'
@@ -106,7 +106,7 @@ judiciously_scrape_geekswhodrink_venue_quiz_results <- function(
   if (n_new_records == 0) {
     if (isFALSE(release_file_exists)) {
       cli::cli_inform(c('i' = 'Writing to release file even though no records exist since no release file existed before.'))
-      write_geekswhodrink_release(
+      write_geekswhodrink_release_csv(
         res,
         name = venue_id, 
         tag = 'venue-quiz-results'
@@ -142,7 +142,7 @@ judiciously_scrape_geekswhodrink_venue_quiz_results <- function(
     dplyr::slice_min(updated_at, n = 1, with_ties = TRUE) |> 
     dplyr::ungroup()
   
-  write_geekswhodrink_release(
+  write_geekswhodrink_release_csv(
     res,
     name = venue_id, 
     tag = 'venue-quiz-results'

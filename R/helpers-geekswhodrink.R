@@ -7,6 +7,7 @@ suppressPackageStartupMessages(suppressWarnings({
   library(readr)
   library(lubridate)
   library(piggyback)
+  library(jsonlite)
 }))
 
 BASE_URL <- 'https://www.geekswhodrink.com/'
@@ -30,17 +31,45 @@ possibly_read_geekswhodrink_release <- purrr::possibly(
   quiet = TRUE
 )
 
-write_geekswhodrink_release <- function(x, name, tag = 'data') {
+write_geekswhodrink_release <- function(x, name, ext, f, tag = 'data') {
   temp_dir <- tempdir(check = TRUE)
-  basename <- sprintf('%s.csv', name)
+  basename <- sprintf('%s.%s', name, ext)
   temp_path <- file.path(temp_dir, basename)
-  readr::write_csv(x, temp_path, na = '')
+  f(x, temp_path)
   piggyback::pb_upload(
     temp_path,
     repo = REPO,
     tag = tag
   )
 }
+
+write_geekswhodrink_release_csv <- function(x, name, ...) {
+  write_geekswhodrink_release(
+    x = x,
+    name = name,
+    ext = 'csv',
+    f = function(x, path) { readr::write_csv(x, path, na = '') },
+    ...
+  )
+}
+
+write_geekswhodrink_release_json <- function(x, name, ...) {
+  write_geekswhodrink_release(
+    x = x,
+    name = name,
+    ext = 'json',
+    f = function(x, path) { 
+      jsonlite::write_json(
+        x, 
+        path, 
+        auto_unbox = TRUE,
+        pretty = TRUE
+      ) 
+    },
+    ...
+  )
+}
+
 
 list_geekswhodrink_releases <- function(tag) {
   piggyback::pb_list(

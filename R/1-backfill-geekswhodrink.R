@@ -12,7 +12,7 @@ scrape_and_cache_geekswhodrink_venue_quiz_results <- function(venue_id, overwrit
   if (nrow(res) > 0) {
     res$updated_at = !!TIMESTAMP
   }
-  write_geekswhodrink_release(
+  write_geekswhodrink_release_csv(
     res, 
     name = venue_id,
     tag = 'venue-quiz-results'
@@ -27,7 +27,7 @@ quiz_results <- purrr::map_dfr(
   scrape_and_cache_geekswhodrink_venue_quiz_results
 )
 
-write_geekswhodrink_release(
+write_geekswhodrink_release_csv(
   quiz_results,
   name = 'quiz-results',
   tag = 'data'

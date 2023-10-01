@@ -26,7 +26,7 @@ n_paths <- length(existing_paths)
         raw$updated_at <- TIMESTAMP
       }
       cli_inform('Uploading {.x} of {n_paths} files.')
-      write_geekswhodrink_release(
+      write_geekswhodrink_release_csv(
         raw,
         str_remove(path, '\\.csv'),
         tag = 'yelp-business-info'

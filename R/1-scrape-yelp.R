@@ -146,7 +146,7 @@ chosen_yelp_businesses <- bind_rows(
   arrange(venue_id)
 scrapable_yelp_businesses <- chosen_yelp_businesses |> filter(!is.na(business_id))
 scrapable_yelp_businesses$updated_at <- TIMESTAMP
-write_geekswhodrink_release(
+write_geekswhodrink_release_csv(
   scrapable_yelp_businesses,
   name = 'yelp-businesses',
   tag = 'data'
@@ -185,7 +185,7 @@ yelp_business_info <- map_dfr_venues(
   }
 )
 
-write_geekswhodrink_release(
+write_geekswhodrink_release_csv(
   yelp_business_info,
   name = 'yelp-business-info',
   tag = 'data'
