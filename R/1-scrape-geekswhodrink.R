@@ -18,6 +18,7 @@ MAX_PAGE <- 6
 venues <- read_geekswhodrink_release('venues')
 
 existing_releases <- list_geekswhodrink_releases('venue-quiz-results') |> 
+  dplyr::filter(tools::file_path_sans_ext(file_name) == 'csv') |> 
   dplyr::mutate(
     venue_id = as.numeric(tools::file_path_sans_ext(file_name)),
     .before = 1

@@ -31,6 +31,7 @@ possibly_read_geekswhodrink_release <- purrr::possibly(
   quiet = TRUE
 )
 
+GITHUB_PAT <- Sys.getenv('GEEKS_WHO_DRINK_TOKEN')
 write_geekswhodrink_release <- function(x, name, ext, f, tag = 'data') {
   temp_dir <- tempdir(check = TRUE)
   basename <- sprintf('%s.%s', name, ext)
@@ -38,6 +39,7 @@ write_geekswhodrink_release <- function(x, name, ext, f, tag = 'data') {
   f(x, temp_path)
   piggyback::pb_upload(
     temp_path,
+    .token = GITHUB_PAT,
     repo = REPO,
     tag = tag
   )
