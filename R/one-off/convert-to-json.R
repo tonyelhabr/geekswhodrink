@@ -8,13 +8,21 @@ suppressPackageStartupMessages(suppressWarnings({
 
 source(file.path('R', 'helpers-geekswhodrink.R'))
 
-existing_releases <- list_geekswhodrink_releases('venue-quiz-results') |> 
-  dplyr::filter(tools::file_path_sans_ext(file_name) == 'csv') |> 
-  dplyr::mutate(
+raw_existing_releases <- list_geekswhodrink_releases('venue-quiz-results')
+
+existing_releases <- raw_existing_releases |> 
+  dplyr::as_tibble() |> 
+  dplyr::transmute(
     venue_id = as.numeric(tools::file_path_sans_ext(file_name)),
-    .before = 1
+    ext = tools::file_ext(file_name),
+    dummy = TRUE
   ) |> 
-  dplyr::arrange(timestamp, venue_id)
+  tidyr::pivot_wider(
+    names_from = ext,
+    values_from = dummy
+  ) |> 
+  dplyr::filter(csv, !json) |> 
+  dplyr::arrange(venue_id)
 
 existing_releases$venue_id |> 
   purrr::walk(
