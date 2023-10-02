@@ -12,13 +12,13 @@ TIMESTAMP <- lubridate::now()
 STALE_QUIZ_RESULTS_DURATION <- 7
 ## Choose a number that roughly corresponds to the number of months to do a "lookback" scrape for.
 ##   If the GitHub Action has been actively running, this should just be 1.
-MAX_PAGE <- 6
+MAX_PAGE <- 1
 
 ## setup ----
 venues <- read_geekswhodrink_release('venues')
 
 existing_releases <- list_geekswhodrink_releases('venue-quiz-results') |> 
-  dplyr::filter(tools::file_path_sans_ext(file_name) == 'csv') |> 
+  dplyr::filter(tools::file_ext(file_name) == 'csv') |> 
   dplyr::mutate(
     venue_id = as.numeric(tools::file_path_sans_ext(file_name)),
     .before = 1
