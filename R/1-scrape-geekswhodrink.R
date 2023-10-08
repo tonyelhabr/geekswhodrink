@@ -27,7 +27,7 @@ existing_releases <- list_geekswhodrink_releases('venue-quiz-results') |>
 
 existing_releases_needing_update <- dplyr::filter(
   existing_releases,
-  timestamp < lubridate::days(STALE_QUIZ_RESULTS_DURATION))
+  timestamp < lubridate::days(STALE_QUIZ_RESULTS_DURATION)
 )
 
 new_venue_ids <- setdiff(venues$venue_id, existing_releases$venue_id)
@@ -138,12 +138,12 @@ judiciously_scrape_geekswhodrink_venue_quiz_results <- function(
   invisible(res)
 }
 
-cli::cli_inform('Scraping quiz results for locations with "stale" data. (Has not been updated in past {STALE_QUIZ_RESULTS_DURATION} days.)')
 n_stale_venues <- length(stale_venue_ids)
+cli::cli_inform('Scraping quiz results for {n_stale_venues} locations with "stale" data. (Has not been updated in past {STALE_QUIZ_RESULTS_DURATION} days.)')
 purrr::iwalk(
   stale_venue_ids,
   \(venue_id, i) {
-    cli::cli_inform('Scraping {i}/{n_stale_venues} venues.')
+    cli::cli_inform('Scraping {i}/{n_stale_venues} stale venues.')
     judiciously_scrape_geekswhodrink_venue_quiz_results(
       venue_id, 
       try_if_existing_has_zero_records = TRUE
@@ -151,12 +151,12 @@ purrr::iwalk(
   }
 )
 
-cli::cli_inform('Scraping quiz results for locations with no prior GitHub release data.')
 n_new_venues <- length(new_venue_ids)
+cli::cli_inform('Scraping quiz results for {n_new_venues} locations with no prior GitHub release data.')
 purrr::iwalk(
   new_venue_ids,
   \(venue_id, i) {
-    cli::cli_inform('Scraping {i}/{n_new_venues} venues.')
+    cli::cli_inform('Scraping {i}/{n_new_venues} new venues.')
     judiciously_scrape_geekswhodrink_venue_quiz_results(
       venue_id, 
       try_if_existing_has_zero_records = TRUE

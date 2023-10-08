@@ -240,7 +240,7 @@ write_geekswhodrink_quiz_results <- function(x, name, ...) {
   
   write_geekswhodrink_release_json(
     x = res,
-    name = as.character(venue_id),
+    name = as.character(name),
     tag = 'venue-quiz-results'
   )
 }
