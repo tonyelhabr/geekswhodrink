@@ -410,22 +410,6 @@ possibly_scrape_geekswhodrink_venue_quiz_results <- purrr::possibly(
   quiet = TRUE
 )
 
-get_existing_releases_needing_update <- function() {
-  
-  existing_releases <- list_geekswhodrink_releases('venue-quiz-results') |> 
-    dplyr::filter(tools::file_ext(file_name) == 'json') |> 
-    dplyr::mutate(
-      venue_id = as.numeric(tools::file_path_sans_ext(file_name)),
-      .before = 1
-    ) |> 
-    dplyr::arrange(timestamp, venue_id)
-  
-  dplyr::filter(
-    existing_releases,
-    timestamp < lubridate::days(STALE_QUIZ_RESULTS_DURATION)
-  )
-}
-
 judiciously_scrape_geekswhodrink_venue_quiz_results <- function(
     venue_id, 
     try_if_existing_has_zero_records = FALSE, 
@@ -549,8 +533,26 @@ judiciously_scrape_x_geekswhodrink_venue_quiz_results <- function(venue_ids, des
   )
 }
 
+
+## TODO: Can eventually remove the check for JSON files, once CSVs for individual quiz results are removed
+get_existing_geekwhodrink_quiz_results_releases <- function() {
+  
+  list_geekswhodrink_releases('venue-quiz-results') |> 
+    dplyr::filter(tools::file_ext(file_name) == 'json') |> 
+    dplyr::mutate(
+      venue_id = as.numeric(tools::file_path_sans_ext(file_name)),
+      .before = 1
+    ) |> 
+    dplyr::arrange(timestamp, venue_id)
+}
+
+
 judiciously_scrape_stale_geekswhodrink_venue_quiz_results <- function() {
-  existing_releases_needing_update <- get_existing_releases_needing_update()
+  existing_releases<- get_existing_geekwhodrink_quiz_results_releases()
+  existing_releases_needing_update <- dplyr::filter(
+    existing_releases,
+    timestamp < lubridate::days(STALE_QUIZ_RESULTS_DURATION)
+  )
   venue_ids <- existing_releases_needing_update$venue_id
   judiciously_scrape_x_geekswhodrink_venue_quiz_results(
     venue_ids = venue_ids,
@@ -560,9 +562,9 @@ judiciously_scrape_stale_geekswhodrink_venue_quiz_results <- function() {
 
 judiciously_scrape_new_geekswhodrink_venue_quiz_results <- function() {
   venues <- read_geekswhodrink_release_csv('venues')
-  existing_releases_needing_update <- get_existing_releases_needing_update()
+  existing_releases <- get_existing_geekwhodrink_quiz_results_releases()
   
-  venue_ids <- setdiff(venues$venue_id, existing_releases_needing_update$venue_id)
+  venue_ids <- setdiff(venues$venue_id, existing_releases$venue_id)
   
   judiciously_scrape_x_geekswhodrink_venue_quiz_results(
     venue_ids = venue_ids,
