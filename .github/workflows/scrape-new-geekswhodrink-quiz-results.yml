@@ -1,12 +1,12 @@
-name: Scrape Geeks Who Drink quiz results
+name: Scrape new Geeks Who Drink quiz results
 
 on:
   schedule:
-    - cron: '0 7 * * 1'
+    - cron: '0 8 1 * 1'
   workflow_dispatch:
 
 jobs:
-  scrape:
+  scrape-new-geekshowdrink-quiz-results:
     runs-on: macOS-latest
     env:
       GITHUB_PAT: ${{ secrets.GEEKS_WHO_DRINK_TOKEN }}
@@ -28,5 +28,5 @@ jobs:
         run: |
           if (!requireNamespace("renv", quietly = TRUE)) install.packages("renv")
           renv::restore()
-      - name: Scrape past week's Geeks Who Drink quiz results
-        run: Rscript -e 'source(file.path("R", "1-scrape-geekswhodrink.R"), echo = FALSE)'
+      - name: Scrape stale Geeks Who Drink quiz results
+        run: Rscript -e 'source(file.path("R", "1-scrape-new-geekswhodrink.R"), echo = FALSE)'
