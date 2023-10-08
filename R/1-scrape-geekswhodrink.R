@@ -27,7 +27,7 @@ existing_releases <- list_geekswhodrink_releases('venue-quiz-results') |>
 
 existing_releases_needing_update <- dplyr::filter(
   existing_releases,
-  timestamp < (Sys.Date()) # lubridate::days(STALE_QUIZ_RESULTS_DURATION))
+  timestamp < lubridate::days(STALE_QUIZ_RESULTS_DURATION))
 )
 
 new_venue_ids <- setdiff(venues$venue_id, existing_releases$venue_id)
@@ -48,13 +48,15 @@ judiciously_scrape_geekswhodrink_venue_quiz_results <- function(
   
   existing_has_error <- !is.null(res_existing$error)
   ## TODO: Coalesce logic for file with 0 rows and no existing file.
-  existing_has_zero_records <- isFALSE(existing_has_error) & (length(existing_quiz_results[['meta']]) == 0)
+  ## Note that we use && instead of & to "escape early" in the case that reading in the file
+  ##   encountered an error.
+  existing_has_zero_records <- isFALSE(existing_has_error) && (nrow(existing_quiz_results) == 0)
   if (existing_has_error | existing_has_zero_records) {
     cli::cli_warn('No existing release file for {.var venue_id} = {.val {venue_id}} .')
     existing_quiz_results <- NULL
     has_existing_quiz_results <- FALSE
   } else {
-    existing_quiz_results <- convert_quiz_results_list_to_df(existing_quiz_results)
+    existing_quiz_results <- convert_quiz_results_list_to_df(existing_quiz_results_list)
     n_quiz_results <- nrow(existing_quiz_results)
     cli::cli_inform(c('i' = '{.var venue_id} = {.val {venue_id}} has {n_quiz_results} existing records.'))
     has_existing_quiz_results <- TRUE
@@ -98,10 +100,10 @@ judiciously_scrape_geekswhodrink_venue_quiz_results <- function(
   if (n_new_records == 0) {
     if (isFALSE(release_file_exists)) {
       cli::cli_inform(c('i' = 'Writing to release file even though no records exist since no release file existed before.'))
-      write_geekswhodrink_release_csv(
+      
+      write_geekswhodrink_quiz_results(
         res,
-        name = venue_id, 
-        tag = 'venue-quiz-results'
+        name = venue_id
       )
       return(res)
     } else {
@@ -116,12 +118,7 @@ judiciously_scrape_geekswhodrink_venue_quiz_results <- function(
     }
   }
   
-  # res <- dplyr::mutate(
-  #   res,
-  #   "venue_id" = venue_id,
-  #   .before = 1
-  # )
-  # res$updated_at <- TIMESTAMP
+  res$updated_at <- TIMESTAMP
   
   res <- dplyr::bind_rows(
     existing_quiz_results,
@@ -134,10 +131,9 @@ judiciously_scrape_geekswhodrink_venue_quiz_results <- function(
     dplyr::slice_min(updated_at, n = 1, with_ties = TRUE) |> 
     dplyr::ungroup()
   
-  write_geekswhodrink_release_csv(
+  write_geekswhodrink_quiz_results(
     res,
-    name = venue_id, 
-    tag = 'venue-quiz-results'
+    name = venue_id
   )
   invisible(res)
 }
