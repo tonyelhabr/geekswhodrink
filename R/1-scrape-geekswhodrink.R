@@ -15,10 +15,10 @@ STALE_QUIZ_RESULTS_DURATION <- 7
 MAX_PAGE <- 1
 
 ## setup ----
-venues <- read_geekswhodrink_release('venues')
+venues <- read_geekswhodrink_release_csv('venues')
 
 existing_releases <- list_geekswhodrink_releases('venue-quiz-results') |> 
-  dplyr::filter(tools::file_ext(file_name) == 'csv') |> 
+  dplyr::filter(tools::file_ext(file_name) == 'json') |> 
   dplyr::mutate(
     venue_id = as.numeric(tools::file_path_sans_ext(file_name)),
     .before = 1
@@ -27,7 +27,7 @@ existing_releases <- list_geekswhodrink_releases('venue-quiz-results') |>
 
 existing_releases_needing_update <- dplyr::filter(
   existing_releases,
-  timestamp < (Sys.Date() - lubridate::days(STALE_QUIZ_RESULTS_DURATION))
+  timestamp < (Sys.Date()) # lubridate::days(STALE_QUIZ_RESULTS_DURATION))
 )
 
 new_venue_ids <- setdiff(venues$venue_id, existing_releases$venue_id)
@@ -36,11 +36,11 @@ stale_venue_ids <- existing_releases_needing_update$venue_id
 ## scrape ----
 judiciously_scrape_geekswhodrink_venue_quiz_results <- function(
     venue_id, 
-    try_if_existing_has_zero_rows = FALSE, 
+    try_if_existing_has_zero_records = FALSE, 
     try_if_recently_scraped = FALSE,
     recent_scrape_window = lubridate::duration(1, unit = 'days')
 ) {
-  res_existing <- safely_read_geekswhodrink_release(venue_id, tag = 'venue-quiz-results')
+  res_existing <- safely_read_geekswhodrink_venue_quiz_results(venue_id)
   
   release_file_exists <- TRUE
   existing_quiz_results <- res_existing$result
@@ -48,51 +48,42 @@ judiciously_scrape_geekswhodrink_venue_quiz_results <- function(
   
   existing_has_error <- !is.null(res_existing$error)
   ## TODO: Coalesce logic for file with 0 rows and no existing file.
-  existing_has_zero_rows <- isFALSE(existing_has_error) & (nrow(res_existing$result) == 0)
-  if (existing_has_error | existing_has_zero_rows) {
+  existing_has_zero_records <- isFALSE(existing_has_error) & (length(existing_quiz_results[['meta']]) == 0)
+  if (existing_has_error | existing_has_zero_records) {
     cli::cli_warn('No existing release file for {.var venue_id} = {.val {venue_id}} .')
-    existing_quiz_results <- NULL # tibble::tibble() ## 0-row tibbles work with bind_rows, whereas 0-row dataframes may not
+    existing_quiz_results <- NULL
     has_existing_quiz_results <- FALSE
-    release_file_exists <- FALSE
   } else {
+    existing_quiz_results <- convert_quiz_results_list_to_df(existing_quiz_results)
     n_quiz_results <- nrow(existing_quiz_results)
-    has_existing_quiz_results <- nrow(existing_quiz_results) > 0
     cli::cli_inform(c('i' = '{.var venue_id} = {.val {venue_id}} has {n_quiz_results} existing records.'))
+    has_existing_quiz_results <- TRUE
     ## Only try scraping the first quiz page for a venue where we've successfully 
     ##   scraped in the past.
     ##   If we're scraping at a weekly cadence, we won't "miss" any quiz results. 
     ##   And, even if we're scraping at a monthly cadence, we should be ok, 
     ##   since venue pages, typically have at least the 5 most recent week's set of scores.
-    if (isTRUE(has_existing_quiz_results)) {
-      max_page <- MAX_PAGE
-      ## Temporary fix for files where I forgot to include updated_at
-      if (isFALSE(any(colnames(existing_quiz_results) == 'updated_at'))) {
-        existing_quiz_results$updated_at <- TIMESTAMP
-        write_geekswhodrink_release_csv(
-          existing_quiz_results,
-          name = venue_id, 
-          tag = 'venue-quiz-results'
-        )
-      }
-    }
+    max_page <- MAX_PAGE
   }
   
   ## Don't continue to try to scrape if the venue_id is not completely new, 
   ##   didn't have past existing results, and has a release file.
-  ##   We should consider setting try_if_existing_has_zero_rows = FALSE 
+  ##   We should consider setting try_if_existing_has_zero_records = FALSE 
   ##   occasionally to check back on venues that originally didn't
   ##   have any records (e.g. a venue with "Coming soon!")
   if (
-    isFALSE(has_existing_quiz_results) & 
-    isFALSE(try_if_existing_has_zero_rows) & 
-    isTRUE(release_file_exists)
+    isTRUE(existing_has_zero_records) & 
+    isFALSE(try_if_existing_has_zero_records)
   ) {
     return(data.frame())
   }
   
   ## Don't try scraping if we've already scraped recently
+  ##   Note that this may not really be necessary if we're already checking for recency
+  ##   outside of this function.
   if (isTRUE(has_existing_quiz_results) & isFALSE(try_if_recently_scraped)) {
     max_updated_at <- max(existing_quiz_results$updated_at)
+    
     should_try_scraping <- (max_updated_at + recent_scrape_window) < TIMESTAMP
     if (isFALSE(should_try_scraping)) {
       cli::cli_inform(c('i' = 'Returning early since it is within the scrape window.'))
@@ -120,17 +111,17 @@ judiciously_scrape_geekswhodrink_venue_quiz_results <- function(
         return(existing_quiz_results)
       } else {
         ## could just return existing_quiz_results if it were a data.frame
-        return(data.frame())
+        return(NULL)
       }
     }
   }
   
-  res <- dplyr::mutate(
-    res,
-    "venue_id" = venue_id,
-    .before = 1
-  )
-  res$updated_at <- TIMESTAMP
+  # res <- dplyr::mutate(
+  #   res,
+  #   "venue_id" = venue_id,
+  #   .before = 1
+  # )
+  # res$updated_at <- TIMESTAMP
   
   res <- dplyr::bind_rows(
     existing_quiz_results,
@@ -159,22 +150,20 @@ purrr::iwalk(
     cli::cli_inform('Scraping {i}/{n_stale_venues} venues.')
     judiciously_scrape_geekswhodrink_venue_quiz_results(
       venue_id, 
-      try_if_existing_has_zero_rows = TRUE
+      try_if_existing_has_zero_records = TRUE
     )
   }
 )
 
 cli::cli_inform('Scraping quiz results for locations with no prior GitHub release data.')
 n_new_venues <- length(new_venue_ids)
-if (n_new_venues > 0) {
-  purrr::iwalk(
-    new_venue_ids,
-    \(venue_id, i) {
-      cli::cli_inform('Scraping {i}/{n_new_venues} venues.')
-      judiciously_scrape_geekswhodrink_venue_quiz_results(
-        venue_id, 
-        try_if_existing_has_zero_rows = TRUE
-      )
-    }
-  )
-}
+purrr::iwalk(
+  new_venue_ids,
+  \(venue_id, i) {
+    cli::cli_inform('Scraping {i}/{n_new_venues} venues.')
+    judiciously_scrape_geekswhodrink_venue_quiz_results(
+      venue_id, 
+      try_if_existing_has_zero_records = TRUE
+    )
+  }
+)

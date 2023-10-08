@@ -12,24 +12,101 @@ suppressPackageStartupMessages(suppressWarnings({
 
 BASE_URL <- 'https://www.geekswhodrink.com/'
 REPO <- 'tonyelhabr/geekswhodrink'
-read_geekswhodrink_release <- function(name, tag = 'data', show_col_types = FALSE) {
-  url <- sprintf('https://github.com/%s/releases/download/%s/%s.csv', REPO, tag, name)
-  readr::read_csv(
-    url,
-    show_col_types = show_col_types,
+read_geekswhodrink_release <- function(name, ext, f, tag = 'data') {
+  url <- sprintf('https://github.com/%s/releases/download/%s/%s.%s', REPO, tag, name, ext)
+  f(url)
+}
+
+read_geekswhodrink_release_csv <- function(name, ...) {
+  read_geekswhodrink_release(
+    name = name,
+    ext = 'csv',
+    f = function(path) { readr::read_csv(path, show_col_types = FALSE) },
+    ...
   )
 }
 
-safely_read_geekswhodrink_release <- purrr::safely(
-  read_geekswhodrink_release,
-  otherwise = data.frame()
+read_geekswhodrink_release_json <- function(name, ...) {
+  read_geekswhodrink_release(
+    name = name,
+    ext = 'json',
+    f = function(path) { jsonlite::read_json(path) },
+    ...
+  )
+}
+
+# safely_read_geekswhodrink_release_csv <- purrr::safely(
+#   read_geekswhodrink_release_csv,
+#   otherwise = data.frame()
+# )
+# 
+# possibly_read_geekswhodrink_release_csv <- purrr::possibly(
+#   read_geekswhodrink_release_csv,
+#   otherwise = data.frame(),
+#   quiet = TRUE
+# )
+# 
+# safely_read_geekswhodrink_release_json <- purrr::safely(
+#   read_geekswhodrink_release_json,
+#   otherwise = data.frame()
+# )
+# 
+# possibly_read_geekswhodrink_release_json <- purrr::possibly(
+#   read_geekswhodrink_release_json,
+#   otherwise = data.frame(),
+#   quiet = TRUE
+# )
+
+unnest_quiz_results_element <- function(x) {
+  res <- purrr::map_dfr(
+    names(x),
+    \(year) {
+      purrr::map_dfr(
+        names(x[[year]]),
+        \(week) {
+          dplyr::mutate(
+            dplyr::bind_rows(x[[year]][[week]]),
+            year = year,
+            week = week,
+            .before = 1
+          )
+        }
+      )
+    }
+  )
+  res
+}
+
+cleanly_read_geekswhodrink_venue_quiz_results <- function(name) {
+  raw <- read_geekswhodrink_release_json(name = name, tag = 'venue-quiz-results')
+  results <- raw$results
+  meta <- raw$meta
+  
+  results <- unnest_quiz_results_element(raw$results)
+  meta <- unnest_quiz_results_element(raw$meta)
+  
+  dplyr::inner_join(
+    meta,
+    results,
+    by = dplyr::join_by(year, week)
+  )
+}
+
+read_geekswhodrink_venue_quiz_results <- function(name) {
+  read_geekswhodrink_release_json(name = name, tag = 'venue-quiz-results')
+}
+
+safely_read_geekswhodrink_venue_quiz_results <- purrr::safely(
+  read_geekswhodrink_venue_quiz_results,
+  otherwise = list()
 )
 
-possibly_read_geekswhodrink_release <- purrr::possibly(
-  read_geekswhodrink_release,
-  otherwise = data.frame(),
+possibly_read_geekswhodrink_venue_quiz_results <- purrr::possibly(
+  read_geekswhodrink_venue_quiz_results,
+  otherwise = list(),
   quiet = TRUE
 )
+
 
 GITHUB_PAT <- Sys.getenv('GEEKS_WHO_DRINK_TOKEN')
 write_geekswhodrink_release <- function(x, name, ext, f, tag = 'data') {
@@ -72,6 +149,76 @@ write_geekswhodrink_release_json <- function(x, name, ...) {
   )
 }
 
+write_geekswhodrink_quiz_results <- function(x, name, ...) {
+  x$year <- lubridate::year(x$quiz_date)
+  x$week <- sprintf('%02d', lubridate::week(x$quiz_date))
+  results <- split(
+    x,
+    x$year
+  ) |> 
+    purrr::map(
+      \(x_by_year) {
+        split(
+          x_by_year,
+          x_by_year$week
+        ) |> 
+          purrr::map(
+            \(x_by_year_week) {
+              purrr::map(
+                x_by_year_week$placing,
+                \(placing) {
+                  team_quiz_results <- x_by_year_week[
+                    x_by_year_week$placing == placing, 
+                  ]
+                  list(
+                    'placing' = team_quiz_results$placing,
+                    'team' = team_quiz_results$team,
+                    'score' = team_quiz_results$score
+                  )
+                }
+              )
+            }
+          )
+      }
+    )
+  
+  meta <- split(
+    x,
+    x$year
+  ) |> 
+    purrr::map(
+      \(x_by_year) {
+        split(
+          x_by_year,
+          x_by_year$week
+        ) |> 
+          purrr::map(
+            \(x_by_year_week) {
+              list(
+                'quiz_date' = x_by_year_week$quiz_date[1],
+                'updated_at' = x_by_year_week$updated_at[1],
+                'has_scores' = any(!is.na(x_by_year_week$score)),
+                'n_teams' = length(x_by_year_week$score),
+                'max_score' = dplyr::na_if(max(x_by_year_week$score, na.rm = TRUE), -Inf),
+                'min_score' = dplyr::na_if(min(x_by_year_week$score, na.rm = TRUE), +Inf),
+                '3rd_score' = sort(x_by_year_week$score, decreasing = TRUE)[3]
+              )
+            }
+          )
+      }
+    )
+  
+  res <- list(
+    'meta' = meta,
+    'results' = results
+  )
+  
+  write_geekswhodrink_release_json(
+    x = res,
+    name = as.character(venue_id),
+    tag = 'venue-quiz-results'
+  )
+}
 
 list_geekswhodrink_releases <- function(tag) {
   piggyback::pb_list(
@@ -117,7 +264,7 @@ scrape_tables_from_geekswhodrink_venue_page <- function(venue_id, page, session 
         .x
       }
     )
-
+  
   n_tbs <- length(tbs)
   if (n_tbs == 0) {
     session$session$close()
@@ -215,7 +362,7 @@ scrape_geekswhodrink_venue_quiz_results <- function(venue_id, max_page = NULL) {
     }
     Sys.sleep(stats::runif(1, min = 1, max = 3))
   }
-
+  
   res <- dplyr::bind_rows(tbs)
   
   if (nrow(res) == 0) {
@@ -230,3 +377,137 @@ possibly_scrape_geekswhodrink_venue_quiz_results <- purrr::possibly(
   otherwise = data.frame(),
   quiet = TRUE
 )
+
+flatten_by_year_week <- function(x, f) {
+  purrr::map_dfr(
+    names(x),
+    \(year) {
+      purrr::map_dfr(
+        names(x[[year]]),
+        \(week) {
+          f(x[[year]][[week]]) |> 
+            dplyr::mutate(
+              year = .env$year,
+              week = .env$week,
+              .before = 1
+            )
+        }
+      )
+    }
+  )
+}
+
+convert_quiz_results_list_to_df <- function(x) {
+  raw_quiz_results <- x$results
+  raw_quiz_meta <- x$meta
+  quiz_results <- flatten_by_year_week(
+    raw_quiz_results,
+    \(x) {
+      purrr::map_dfr(
+        seq_along(x),
+        \(i) {
+          row <- x[[i]]
+          ## TODO: this is to address a bug with initial storage of data as JSON, where I indexed by placing,
+          ##   assuming each venue's weekly quiz results had unique placings. now,
+          ##   i just sequence a long records, so in the future, this clause can be taken out
+          if (class(row$team) == 'list') {
+            return(
+              data.frame(
+                'placing' = as.integer(unlist(purrr::pluck(row, 'placing'))),
+                'team' = unlist(purrr::pluck(row, 'team')),
+                'score' = as.integer(unlist(purrr::pluck(row, 'score')), 'NA')
+              )
+            )
+            
+          }
+          data.frame(
+            'placing' = as.integer(row$placing),
+            'team' = dplyr::coalesce(row$team, NA_character_),
+            'score' = as.integer(dplyr::na_if(row$score, 'NA'))
+          )
+        }
+      )
+    }
+  )
+  
+  quiz_meta <- flatten_by_year_week(
+    raw_quiz_meta,
+    \(x) {
+      data.frame(
+        'quiz_date' = x$quiz_date,
+        'updated_at' = x$updated_at
+      )
+    }
+  )
+  
+  dplyr::inner_join(
+    quiz_meta |> dplyr::select(year, week, quiz_date, updated_at),
+    quiz_results |> dplyr::select(year, week, placing, team, score),
+    dplyr::join_by(year, week)
+  ) |> 
+    tibble::as_tibble()
+}
+
+split_by_year_week <- function(df, f) {
+  split(
+    df,
+    df$year
+  ) |> 
+    purrr::map(
+      \(by_year) {
+        split(
+          by_year,
+          by_year$week
+        ) |> 
+          purrr::map(
+            \(by_year_week) {
+              f(by_year_week)
+            }
+          )
+      }
+    )
+}
+
+convert_quiz_results_df_to_list <- function(df) {
+  df$year <- lubridate::year(df$quiz_date)
+  df$week <- sprintf('%02d', lubridate::week(df$quiz_date))
+  quiz_results <- split_by_year_week(
+    df,
+    \(x) {
+      purrr::map(
+        x$placing,
+        \(placing) {
+          team_quiz_results <- x[
+            x$placing == placing, 
+          ]
+          list(
+            'placing' = team_quiz_results$placing,
+            'team' = team_quiz_results$team,
+            'score' = team_quiz_results$score
+          )
+        }
+      )
+    }
+  )
+  
+  quiz_meta <- split_by_year_week(
+    df,
+    \(x) {
+      list(
+        'quiz_date' = x$quiz_date[1],
+        'updated_at' = x$updated_at[1],
+        'has_scores' = any(!is.na(x$score)),
+        'n_teams' = length(x$score),
+        ## na_if(x, y) has issues with if xis an integer and y is Inf
+        'max_score' = dplyr::na_if(as.double(max(x$score, na.rm = TRUE)), -Inf),
+        'min_score' = dplyr::na_if(as.double(min(x$score, na.rm = TRUE)), +Inf),
+        '3rd_score' = sort(x$score, decreasing = TRUE)[3]
+      )
+    }
+  )
+  
+  list(
+    'meta' = quiz_meta,
+    'results' = quiz_results
+  )
+}
