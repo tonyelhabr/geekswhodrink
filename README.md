@@ -11,21 +11,15 @@ This repo stores public [*Geeks Who Drink*](https://www.geekswhodrink.com/) quiz
 | File | Download |
 | :----- | :------- |
 | `venues.csv` | [Download](https://github.com/tonyelhabr/geekswhodrink/releases/download/data/venues.csv) |
-| `quiz-results.csv` | [Download](https://github.com/tonyelhabr/geekswhodrink/releases/download/data/quiz-results.csv) |
-
-Oh, and for the Austin locals, here is the same data, filtered to just the Austin area.
-
-| File | Download |
-| :----- | :------- |
-| `austin-venues.csv` | [Download](https://github.com/tonyelhabr/geekswhodrink/releases/download/data/austin-venues.csv) |
-| `austin-quiz-results.csv` | [Download](https://github.com/tonyelhabr/geekswhodrink/releases/download/data/austin-quiz-results.csv) |
+| `quiz-results.json` | Coming soon! |
 
 ### GitHub Actions
 
 | Action |
 | ------ |
 | [![Scrape Geeks Who Drink venues](https://github.com/tonyelhabr/geekswhodrink/actions/workflows/scrape-geekswhodrink-venues.yml/badge.svg)](https://github.com/tonyelhabr/geekswhodrink/actions/workflows/scrape-geekswhodrink-venues.yml) |
-[![Scrape Geeks Who Drink quiz results](https://github.com/tonyelhabr/geekswhodrink/actions/workflows/scrape-geekswhodrink-quiz-results.yml/badge.svg)](https://github.com/tonyelhabr/geekswhodrink/actions/workflows/scrape-geekswhodrink-quiz-results.yml)
+[![Scrape stale Geeks Who Drink quiz results](https://github.com/tonyelhabr/geekswhodrink/actions/workflows/scrape-stale-geekswhodrink-quiz-results.yml/badge.svg)](https://github.com/tonyelhabr/geekswhodrink/actions/workflows/scrape-stale-geekswhodrink-quiz-results.yml)
+[![Scrape new Geeks Who Drink quiz results](https://github.com/tonyelhabr/geekswhodrink/actions/workflows/scrape-new-geekswhodrink-quiz-results.yml/badge.svg)](https://github.com/tonyelhabr/geekswhodrink/actions/workflows/scrape-new-geekswhodrink-quiz-results.yml)
 
 ### Dictionary
 
@@ -38,10 +32,70 @@ Oh, and for the Austin locals, here is the same data, filtered to just the Austi
 -   `name`: venue's name
 -   `address`: venue's address
 
-#### quiz-results.csv
+#### quiz-results/`{venue_id}`.json
 
--   `venue_id`: venue's ID
--   `quiz_date`: date that quiz game was played
--   `placing`: team's placing at venue, based on descending score
--   `team`: team's name
--   `score`: team's score
+Each venue's quiz results come with a `meta` element, that is effectively one array per quiz date. This array stores meta-level information about the results. The `results` element contain the scores for each team for every quiz date. The placing of a team 
+
+```json
+{
+  "meta": {
+    "{quiz year}": {
+      "{quiz week}": {
+        "n_teams": {n_teams},
+        "max_score": {max_score},
+        "min_score": {min_score},
+        "3rd_score": {3rd_score},
+        "updated_at": {updated_at}
+      }
+    }
+  },
+  "results": {
+    "{quiz year}": {
+      "{quiz week}": [
+          {
+            "placing": {placing},
+            "team": "{team}",
+            "score": {score}
+          }
+      ]
+    }
+  }
+}
+```
+
+For example, for a quiz run on Feb. 16, 2023, (the seventh week of 2023) where 3 teams competed, the venue's results would look like this
+
+```json
+{
+  "meta": {
+    "2023": {
+      "07": {
+        "n_teams": 3,
+        "max_score": 91,
+        "min_score": 83,
+        "3rd_score": 83,
+        "updated_at": "2023-02-20 10:09:42"
+      }
+    }
+  },
+  "results": {
+    "2023": {
+      "07": [
+          {
+            "team": "Best Place First Place",
+            "score": 91
+          },
+          {
+            "team": "I'm just here so I don't get fined",
+            "score": 88
+          },
+          {
+            "team": "That's what she said",
+            "score": 83
+          }
+      ]
+    }
+  }
+}
+```
+
