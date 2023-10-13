@@ -9,21 +9,25 @@ This repo stores public [*Geeks Who Drink*](https://www.geekswhodrink.com/) quiz
 ## Data
 
 | File | Download |
-| :----- | :------- |
+| :----| :------- |
 | `venues.csv` | [Download](https://github.com/tonyelhabr/geekswhodrink/releases/download/data/venues.csv) |
 | `quiz-results.json` | Coming soon! |
+
+Individual venue quiz results can be downloaded at ``https://github.com/tonyelhabr/geekswhodrink/releases/download/venue-quiz-results/{venue_id}.json`
 
 ### GitHub Actions
 
 | Action |
 | ------ |
 | [![Scrape Geeks Who Drink venues](https://github.com/tonyelhabr/geekswhodrink/actions/workflows/scrape-geekswhodrink-venues.yml/badge.svg)](https://github.com/tonyelhabr/geekswhodrink/actions/workflows/scrape-geekswhodrink-venues.yml) |
-[![Scrape stale Geeks Who Drink quiz results](https://github.com/tonyelhabr/geekswhodrink/actions/workflows/scrape-stale-geekswhodrink-quiz-results.yml/badge.svg)](https://github.com/tonyelhabr/geekswhodrink/actions/workflows/scrape-stale-geekswhodrink-quiz-results.yml)
+[![Scrape stale Geeks Who Drink quiz results](https://github.com/tonyelhabr/geekswhodrink/actions/workflows/scrape-stale-geekswhodrink-quiz-results.yml/badge.svg)](https://github.com/tonyelhabr/geekswhodrink/actions/workflows/scrape-stale-geekswhodrink-quiz-results.yml) |
 [![Scrape new Geeks Who Drink quiz results](https://github.com/tonyelhabr/geekswhodrink/actions/workflows/scrape-new-geekswhodrink-quiz-results.yml/badge.svg)](https://github.com/tonyelhabr/geekswhodrink/actions/workflows/scrape-new-geekswhodrink-quiz-results.yml)
 
 ### Dictionary
 
 #### venues.csv
+
+List of venues that have hosted Geeks Who Drink quizzes.
 
 -   `venue_id`: venue's ID
 -   `url`: venue's Geeks Who Drink landing page
@@ -32,33 +36,30 @@ This repo stores public [*Geeks Who Drink*](https://www.geekswhodrink.com/) quiz
 -   `name`: venue's name
 -   `address`: venue's address
 
+Some locations have not yet hosted a quiz or no longer host quizzes.
+
 #### quiz-results/`{venue_id}`.json
 
-Each venue's quiz results come with a `meta` element, that is effectively one array per quiz date. This array stores meta-level information about the results. The `results` element contain the scores for each team for every quiz date. The placing of a team 
+Each venue's quiz results come in the following format.
 
 ```json
 {
-  "meta": {
-    "{quiz year}": {
-      "{quiz week}": {
-        "n_teams": {n_teams},
-        "max_score": {max_score},
-        "min_score": {min_score},
-        "3rd_score": {3rd_score},
-        "updated_at": {updated_at}
+  "quiz_week": {
+    "meta": {
+      "quiz_date": {quiz_date},
+      "n_teams": {n_teams},
+      "max_score": {max_score},
+      "min_score": {min_score},
+      "3rd_score": {3rd_score},
+      "updated_at": {updated_at}
+    },
+    "results": [
+      {
+        "placing": {placing},
+        "team": "{team}",
+        "score": {score}
       }
-    }
-  },
-  "results": {
-    "{quiz year}": {
-      "{quiz week}": [
-          {
-            "placing": {placing},
-            "team": "{team}",
-            "score": {score}
-          }
-      ]
-    }
+    ]
   }
 }
 ```
@@ -67,35 +68,35 @@ For example, for a quiz run on Feb. 16, 2023, (the seventh week of 2023) where 3
 
 ```json
 {
-  "meta": {
-    "2023": {
-      "07": {
-        "n_teams": 3,
-        "max_score": 91,
-        "min_score": 83,
-        "3rd_score": 83,
-        "updated_at": "2023-02-20 10:09:42"
+  "2023-W07": {
+    "meta": {
+      "quiz_date": "2023-02-16",
+      "n_teams": 3,
+      "max_score": 91,
+      "min_score": 83,
+      "3rd_score": 83,
+      "updated_at": "2023-02-20 10:09:42"
+    },
+    "results": [
+      {
+        "placing": 1,
+        "team": "Best Place First Place",
+        "score": 91
+      },
+      {
+        "placing": 2,
+        "team": "I'm just here so I don't get fined",
+        "score": 88
+      },
+      {
+        "placing": 3,
+        "team": "That's what she said",
+        "score": 83
       }
-    }
-  },
-  "results": {
-    "2023": {
-      "07": [
-          {
-            "team": "Best Place First Place",
-            "score": 91
-          },
-          {
-            "team": "I'm just here so I don't get fined",
-            "score": 88
-          },
-          {
-            "team": "That's what she said",
-            "score": 83
-          }
-      ]
-    }
+    ]
   }
 }
 ```
+
+The `meta` element is a dictionary that stores information about the results across all teams. The `results` element is an array of dictionaries, where each dictionary stores information about an individual team's results for the quiz.
 
