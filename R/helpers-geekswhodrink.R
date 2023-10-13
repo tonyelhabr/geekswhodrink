@@ -122,6 +122,31 @@ convert_quiz_results_list_to_df <- function(x) {
     )
 }
 
+new_convert_quiz_results_list_to_df <- function(x) {
+  purrr::map_dfr(
+    rlang::set_names(names(x)),
+    \(iso_week) {
+      iso_week <- "2022-W29"
+      by_iso_week <- x[[iso_week]]
+      meta <- dplyr::bind_rows(by_iso_week$meta)
+      results <- dplyr::bind_rows(by_iso_week$results)
+      
+      dplyr::bind_cols(
+        meta |> dplyr::select(quiz_date, quiz_date, updated_at),
+        results |> dplyr::select(placing, team, score)
+      ) |> 
+        dplyr::transmute(
+          quiz_week = .env$iso_week,
+          quiz_date = lubridate::ymd(quiz_date),
+          placing,
+          team,
+          score,
+          updated_at = lubridate::ymd_hms(updated_at)
+        )
+    }
+  )
+}
+
 read_geekswhodrink_venue_quiz_results <- function(name) {
   res <- read_geekswhodrink_release_json(
     name = name,
@@ -159,7 +184,7 @@ write_geekswhodrink_release <- function(x, name, ext, f, tag = 'data') {
 write_geekswhodrink_release_json <- function(x, name, ...) {
   write_geekswhodrink_release(
     x = x,
-    name = name,
+    name = as.character(name),
     ext = 'json',
     f = function(x, path) { 
       jsonlite::write_json(
@@ -239,6 +264,41 @@ convert_quiz_results_df_to_list <- function(df) {
     'meta' = quiz_meta,
     'results' = quiz_results
   )
+}
+
+new_convert_quiz_results_df_to_list <- function(df) {
+  res <- split(
+    df,
+    df$iso_quiz_date
+  ) |> 
+    purrr::map(
+      \(by_iso_week) {
+        meta <- list(
+          'quiz_date' = by_iso_week$quiz_date[1],
+          'updated_at' = by_iso_week$updated_at[1],
+          'has_scores' = any(!is.na(by_iso_week$score)),
+          'n_teams' = length(by_iso_week$score),
+          'max_score' = dplyr::na_if(as.double(max(by_iso_week$score, na.rm = TRUE)), -Inf),
+          'min_score' = dplyr::na_if(as.double(min(by_iso_week$score, na.rm = TRUE)), +Inf),
+          '3rd_score' = sort(by_iso_week$score, decreasing = TRUE)[3]
+        )
+        results <- purrr::map(
+          1:nrow(by_iso_week),
+          \(i) {
+            team_result <- by_iso_week[i, ]
+            list(
+              'placing' = team_result$placing,
+              'team' = team_result$team,
+              'score' = team_result$score
+            )
+          }
+        )
+        list(
+          'meta' = meta,
+          'results' = results
+        )
+      }
+    )
 }
 
 
