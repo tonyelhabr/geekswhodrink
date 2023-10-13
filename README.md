@@ -40,31 +40,48 @@ Some locations have not yet hosted a quiz or no longer host quizzes.
 
 #### quiz-results/`{venue_id}`.json
 
-Each venue's quiz results come in the following format.
+Each venue's quiz results come with the following structure.
 
 ```json
 {
-  "quiz_week": {
-    "meta": {
-      "quiz_date": {quiz_date},
-      "n_teams": {n_teams},
-      "max_score": {max_score},
-      "min_score": {min_score},
-      "3rd_score": {3rd_score},
-      "updated_at": {updated_at}
-    },
-    "results": [
-      {
-        "placing": {placing},
-        "team": "{team}",
-        "score": {score}
-      }
-    ]
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "patternProperties": {
+    "^[0-9]{4}-W[0-9]{2}$": {
+      "type": "object",
+      "properties": {
+        "meta": {
+          "type": "object",
+          "properties": {
+            "quiz_date": { "type": "string", "format": "date" },
+            "n_teams": { "type": "integer" },
+            "max_score": { "type": "integer" },
+            "min_score": { "type": "integer" },
+            "3rd_score": { "type": "integer" },
+            "updated_at": { "type": "string", "format": "date-time" }
+          },
+          "required": ["quiz_date", "n_teams", "max_score", "min_score", "3rd_score", "updated_at"]
+        },
+        "results": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "placing": { "type": "integer" },
+              "team": { "type": "string" },
+              "score": { "type": "integer" }
+            },
+            "required": ["placing", "team", "score"]
+          }
+        }
+      },
+      "required": ["meta", "results"]
+    }
   }
 }
 ```
 
-For example, for a quiz run on Feb. 16, 2023, (the seventh week of 2023) where 3 teams competed, the venue's results would look like this
+For example, for a quiz run on Feb. 16, 2023, (the seventh week of 2023) where three teams competed, the venue's results would look like this.
 
 ```json
 {
