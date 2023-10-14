@@ -13,7 +13,7 @@ This repo stores public [*Geeks Who Drink*](https://www.geekswhodrink.com/) quiz
 | `venues.csv` | [Download](https://github.com/tonyelhabr/geekswhodrink/releases/download/data/venues.csv) |
 | `quiz-results.json` | Coming soon! |
 
-Individual venue quiz results can be downloaded at ``https://github.com/tonyelhabr/geekswhodrink/releases/download/venue-quiz-results/{venue_id}.json`
+Individual venue quiz results can be downloaded at `https://github.com/tonyelhabr/geekswhodrink/releases/download/venue-quiz-results/{venue_id}.json`
 
 ### GitHub Actions
 
