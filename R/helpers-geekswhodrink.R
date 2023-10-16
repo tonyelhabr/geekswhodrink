@@ -11,7 +11,7 @@ suppressPackageStartupMessages(suppressWarnings({
 }))
 
 ## Data is considered "stale" / in need of update if it hasn't been updated for x days
-STALE_QUIZ_RESULTS_DURATION <- 7
+STALE_QUIZ_RESULTS_DURATION <- 6
 ## Choose a number that roughly corresponds to the number of months to do a "lookback" scrape for.
 ##   If the GitHub Action has been actively running, this should just be 1.
 MAX_PAGE <- 1
@@ -119,6 +119,11 @@ write_geekswhodrink_release_json <- function(x, name, ...) {
 }
 
 convert_quiz_results_df_to_list <- function(df) {
+  df$iso_quiz_date <- sprintf(
+    '%s-W%02d', 
+    lubridate::year(df$quiz_date), 
+    lubridate::isoweek(df$quiz_date)
+  )
   res <- split(
     df,
     df$iso_quiz_date
