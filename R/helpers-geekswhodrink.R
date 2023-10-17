@@ -46,13 +46,30 @@ convert_quiz_results_list_to_df <- function(x) {
   purrr::map_dfr(
     rlang::set_names(names(x)),
     \(iso_week) {
-      iso_week <- "2022-W29"
       by_iso_week <- x[[iso_week]]
-      meta <- dplyr::bind_rows(by_iso_week$meta)
-      results <- dplyr::bind_rows(by_iso_week$results)
+      raw_meta <- by_iso_week$meta
+      raw_results <- by_iso_week$results
+      
+      meta <- tibble::tibble(
+        'quiz_date' = raw_meta$quiz_date,
+        'updated_at' = raw_meta$updated_at
+      )
+      
+      suppressWarnings(
+        results <- purrr::map_dfr(
+          raw_results,
+          \(x) {
+            list(
+              'placing' = as.integer(x$placing),
+              'team' = as.character(x$team),
+              'score' = as.integer(x$score)
+            )
+          }
+        )
+      )
       
       dplyr::bind_cols(
-        meta |> dplyr::select(quiz_date, quiz_date, updated_at),
+        meta |> dplyr::select(quiz_date, updated_at),
         results |> dplyr::select(placing, team, score)
       ) |> 
         dplyr::transmute(
@@ -369,7 +386,12 @@ judiciously_scrape_geekswhodrink_venue_quiz_results <- function(
     isTRUE(existing_has_zero_records) & 
     isFALSE(try_if_existing_has_zero_records)
   ) {
-    return(data.frame())
+    res <- data.frame()
+    write_geekswhodrink_quiz_results(
+      res,
+      name = venue_id
+    )
+    return(res)
   }
   
   ## Don't try scraping if we've already scraped recently
