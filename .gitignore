@@ -2,4 +2,5 @@ venv/
 src/__pycache__/
 .Rproj.user
 README-dev.md
-data/
+/.quarto/
+docs/
