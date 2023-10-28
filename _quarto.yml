@@ -1,0 +1,10 @@
+project:
+  title: "geekswhodrink"
+  output-dir: docs
+  render:
+    - index.qmd
+  preview:
+    port: 4200
+
+execute:
+  freeze: false

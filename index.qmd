@@ -1,0 +1,58 @@
+---
+title: "Geeks Who Drink"
+execute: 
+  eval: false
+format:
+  html: 
+    theme:
+      - default
+    page-layout: custom
+    margin-left: 50px
+    margin-top: 50px
+    margin-right: 50px
+    margin-bottom: 50px
+---
+
+```{r}
+#| label: data-load
+#| include: false
+#| eval: true
+library(readr)
+venues <- readr::read_csv(
+  'https://github.com/tonyelhabr/geekswhodrink/releases/download/data/austin-venues.csv'
+)
+```
+
+::: grid
+::: {.g-col-12 .g-col-xl-8}
+This is a wide table.
+
+```{r}
+#| label: venues-table-1
+#| include: true
+#| eval: true
+venues |> 
+  dplyr::select(
+    `Venue ID` = venue_id,
+    Name = name,
+    Address = address
+  ) |> 
+  knitr::kable()
+```
+:::
+
+::: {.g-col-12 .g-col-xl-4}
+This is a table.
+
+```{r}
+#| label: venues-table-2
+#| echo: true
+venues |> 
+  dplyr::select(
+    `Venue ID` = venue_id,
+    Name = name
+  ) |> 
+  knitr::kable(format = 'html') 
+```
+:::
+:::
