@@ -22,7 +22,7 @@ overwrite_existing_venue_quiz_results <- function(venue_id) {
     lubridate::year(raw$quiz_date), 
     lubridate::isoweek(raw$quiz_date)
   )
-  res <- new_convert_quiz_results_df_to_list(raw)
+  res <- convert_quiz_results_df_to_list(raw)
   write_geekswhodrink_release_json(
     x = res,
     name = venue_id,
