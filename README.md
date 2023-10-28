@@ -11,7 +11,7 @@ This repo stores public [*Geeks Who Drink*](https://www.geekswhodrink.com/) quiz
 | File | Download |
 | :----| :------- |
 | `venues.csv` | [Download](https://github.com/tonyelhabr/geekswhodrink/releases/download/data/venues.csv) |
-| `quiz-results.json` | Coming soon! |
+| `quiz-results.csv` | [Download](https://github.com/tonyelhabr/geekswhodrink/releases/download/data/quiz-results.csv) |
 
 Individual venue quiz results can be downloaded at `https://github.com/tonyelhabr/geekswhodrink/releases/download/venue-quiz-results/{venue_id}.json`
 
@@ -60,7 +60,14 @@ Each venue's quiz results come with the following structure.
             "3rd_score": { "type": "integer" },
             "updated_at": { "type": "string", "format": "date-time" }
           },
-          "required": ["quiz_date", "n_teams", "max_score", "min_score", "3rd_score", "updated_at"]
+          "required": [
+            "quiz_date",
+            "n_teams", 
+            "max_score", 
+            "min_score", 
+            "3rd_score", 
+            "updated_at"
+          ]
         },
         "results": {
           "type": "array",

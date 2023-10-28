@@ -118,6 +118,22 @@ write_geekswhodrink_release <- function(x, name, ext, f, tag = 'data') {
   )
 }
 
+write_geekswhodrink_release_csv <- function(x, name, ...) {
+  write_geekswhodrink_release(
+    x = x,
+    name = as.character(name),
+    ext = 'csv',
+    f = function(x, path) { 
+      readr::write_csv(
+        x, 
+        path, 
+        na = ''
+      ) 
+    },
+    ...
+  )
+}
+
 write_geekswhodrink_release_json <- function(x, name, ...) {
   write_geekswhodrink_release(
     x = x,
