@@ -6,19 +6,5 @@ project:
   preview:
     port: 4200
 
-project:
-  title: "geekswhodrink"
-  output-dir: docs
-  render:
-    - index.qmd
-  preview:
-    port: 4200
-
-format:
-  html:
-    theme:
-      light: [flatly, assets/styles.css]
-      dark: [darkly, assets/styles.css]
-
 execute:
   freeze: false

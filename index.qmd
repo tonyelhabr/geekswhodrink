@@ -2,14 +2,20 @@
 title: 'Geeks Who Drink'
 format: 
   dashboard:
-    theme: default
     orientation: columns
+    theme:
+      light: [flatly, assets/styles.css]
+      dark: [darkly, assets/styles.css]
 ---
 
 ```{r}
 #| label: data-load
 #| include: false
 #| eval: true
+
+## References:
+## https://github.com/mine-cetinkaya-rundel/ld-dashboard/blob/main/dashboard.qmd
+## https://github.com/jjallaire/waste-sites-dashboard/blob/main/dashboard.qmd
 library(readr)
 library(dplyr)
 library(leaflet)
