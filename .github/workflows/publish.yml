@@ -9,9 +9,12 @@ jobs:
   build-deploy:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
       pages: write
       id-token: write
+    env:
+      GITHUB_PAT: ${{ secrets.GEEKS_WHO_DRINK_TOKEN }}
+      RENV_PATHS_ROOT: ~/.local/share/renv
     steps:
       - name: Check out repository
         uses: actions/checkout@v4 
@@ -30,16 +33,21 @@ jobs:
       - name: Install System Dependecies
         run: |
           sudo apt-get update
-          sudo apt-get install libcurl4-openssl-dev
+          sudo apt-get install libcurl4-openssl-dev libudunits2-dev libgdal-dev libgeos-dev libproj-dev 
           
-      ## r-lib/actions/setup-renv@v2 doesn't seem to work for me
+      - name: Get R and OS version
+        id: get-version
+        run: |
+          cat("os-version=", sessionInfo()$running, "\n", file = Sys.getenv("GITHUB_OUTPUT"), sep = "", append = TRUE)
+          cat("r-version=", R.Version()$version.string, "\n", file = Sys.getenv("GITHUB_OUTPUT"), sep = "", append = TRUE)
+        shell: Rscript {0}
+        
       - name: Cache packages
         uses: actions/cache@v3
         with:
           path: ${{ env.RENV_PATHS_ROOT }}
-          key: ${{ runner.os }}-renv-${{ hashFiles('**/renv.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-renv-
+          key: ${{ steps.get-version.outputs.os-version }}-${{ steps.get-version.outputs.r-version }}-${{ hashFiles('**/renv.lock') }}
+          restore-keys: ${{ steps.get-version.outputs.os-version }}-${{ steps.get-version.outputs.r-version }}-
             
       - name: Restore packages
         shell: Rscript {0}
@@ -51,5 +59,6 @@ jobs:
         uses: quarto-dev/quarto-actions/publish@v2
         with:
           render: true
-          target: netlify
-          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          target: gh-pages
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
