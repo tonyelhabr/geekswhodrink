@@ -1,16 +1,9 @@
 ---
-title: "Geeks Who Drink"
-execute: 
-  eval: false
-format:
-  html: 
-    theme:
-      - default
-    page-layout: custom
-    margin-left: 50px
-    margin-top: 50px
-    margin-right: 50px
-    margin-bottom: 50px
+title: 'Geeks Who Drink'
+format: 
+  dashboard:
+    theme: default
+    orientation: columns
 ---
 
 ```{r}
@@ -18,41 +11,108 @@ format:
 #| include: false
 #| eval: true
 library(readr)
-venues <- readr::read_csv(
-  'https://github.com/tonyelhabr/geekswhodrink/releases/download/data/austin-venues.csv'
-)
+library(dplyr)
+library(leaflet)
+library(purrr)
+library(stringr)
+library(htmltools)
+library(reactable)
+
+REPO <- 'tonyelhabr/geekswhodrink'
+read_geekswhodrink_release <- function(name, ext, f, tag = 'data') {
+  url <- sprintf('https://github.com/%s/releases/download/%s/%s.%s', REPO, tag, name, ext)
+  f(url)
+}
+
+read_geekswhodrink_release_csv <- function(name, ...) {
+  read_geekswhodrink_release(
+    name = name,
+    ext = 'csv',
+    f = function(path) { readr::read_csv(path, show_col_types = FALSE) },
+    ...
+  )
+}
+
+ADDRESS_SUFFIX_REGEX <- '\\,\\s([A-Z]{2})\\s([0-9]+$)'
+str_replace_address <- function(x, i) {
+  stringr::str_replace(x, paste0('(^.*)', ADDRESS_SUFFIX_REGEX), paste0('\\', i))
+}
+
+venues <- read_geekswhodrink_release_csv(
+  name = 'venues',
+  tag = 'data'
+) |> 
+  dplyr::transmute(
+    venue_id,
+    name,
+    full_address = address,
+    address_no_state_zip = stringr::str_remove(full_address, ADDRESS_SUFFIX_REGEX),
+    state = stringr::str_remove(full_address, '[-][0-9]{4}$') |> str_replace_address(2),
+    city = stringr::str_remove(full_address, '[-][0-9]{4}$') |> str_replace_address(1),
+    zip = str_replace_address(full_address, 3),
+    lat,
+    lon
+  )
 ```
 
-::: grid
-::: {.g-col-12 .g-col-xl-8}
-This is a wide table.
+## Column {width="60%"}
 
 ```{r}
-#| label: venues-table-1
-#| include: true
-#| eval: true
-venues |> 
-  dplyr::select(
-    `Venue ID` = venue_id,
-    Name = name,
-    Address = address
+#| label: map
+#| title: Quiz venue locations
+#| padding: 0
+## https://github.com/jjallaire/waste-sites-dashboard/blob/main/dashboard.qmd
+leaflet::leaflet() |> 
+  leaflet::addTiles() |> 
+  # addProviderTiles('CartoDB.Positron') |> 
+  # fitBounds(
+  #   lng1 = -127.44, 
+  #   lat1 = 24.05, 
+  #   lng2 = -65.30, 
+  #   lat2 = 50.35
+  # ) |> 
+  leaflet::fitBounds(
+    lng1 = -97.95,
+    lat1 = 30.12, 
+    lng2 = -97.56, 
+    lat2 = 30.52
   ) |> 
-  knitr::kable()
+  leaflet::addMarkers(
+    lng = venues$lon,
+    lat = venues$lat,
+    label = sprintf(
+      '<strong>%s</strong><br/>%s<br/>%s, %s',
+      venues$name,
+      venues$address_no_state_zip,
+      venues$state,
+      venues$zip
+    ) |>
+      purrr::map(htmltools::HTML),
+    labelOptions = leaflet::labelOptions(
+      style = list('font-weight' = 'normal'),
+      direction = 'auto'
+    )
+  )
 ```
-:::
 
-::: {.g-col-12 .g-col-xl-4}
-This is a table.
+## Column {width="40%"}
 
 ```{r}
-#| label: venues-table-2
-#| echo: true
+#| label: table
+#| title: Quiz venues
 venues |> 
   dplyr::select(
-    `Venue ID` = venue_id,
-    Name = name
+    `State` = state,
+    `Name` = name,
+    `Address` = address_no_state_zip,
+    `Venue ID` = venue_id
   ) |> 
-  knitr::kable(format = 'html') 
+  reactable::reactable(
+    defaultPageSize = 10,
+    sortable = TRUE,
+    filterable = TRUE,
+    defaultSorted = c('State', 'Name'),
+    defaultSortOrder = 'asc',
+    pagination = TRUE
+  )
 ```
-:::
-:::
