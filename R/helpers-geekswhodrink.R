@@ -478,7 +478,7 @@ judiciously_scrape_x_geekswhodrink_venue_quiz_results <- function(venue_ids, des
     msg <- glue::glue('{msg} (i.e. venues with quiz results that have not been updated in past {STALE_QUIZ_RESULTS_DURATION} days.)')
   }
   cli::cli_inform(msg)
-  res <- purrr::map_dfr(
+  res <- purrr::imap_dfr(
     venue_ids,
     \(venue_id, i) {
       cli::cli_inform('Scraping {i}/{n_venues} {descriptor} venues.')
