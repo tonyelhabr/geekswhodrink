@@ -202,10 +202,12 @@ write_geekswhodrink_quiz_results <- function(x, name, ...) {
   )
 }
 
+GWD_TOKEN <- Sys.getenv('GEEKS_WHO_DRINK_TOKEN')
 list_geekswhodrink_releases <- function(tag) {
   piggyback::pb_list(
     repo = REPO, 
-    tag = tag
+    tag = tag,
+    .token = GWD_TOKEN
   )
 }
 
@@ -499,12 +501,9 @@ judiciously_scrape_x_geekswhodrink_venue_quiz_results <- function(venue_ids, des
   res
 }
 
-
-## TODO: Can eventually remove the check for JSON files, once CSVs for individual quiz results are removed
 get_existing_geekwhodrink_quiz_results_releases <- function() {
   
   list_geekswhodrink_releases('venue-quiz-results') |> 
-    dplyr::filter(tools::file_ext(file_name) == 'json') |> 
     dplyr::mutate(
       venue_id = as.numeric(tools::file_path_sans_ext(file_name)),
       .before = 1
