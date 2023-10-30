@@ -493,7 +493,7 @@ judiciously_scrape_x_geekswhodrink_venue_quiz_results <- function(venue_ids, des
   
   write_geekswhodrink_release_csv(
     res,
-    name = paste0('quiz-results-', descriptor)
+    name = paste0('quiz-results-', descriptor),
     tag = 'data'
   )
   res

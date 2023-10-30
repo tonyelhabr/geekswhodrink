@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  scrape-new-geekshowdrink-quiz-results:
+  scrape-new-quiz-results:
     ## Don't use macOS? https://github.com/actions/runner-images/issues/602
     runs-on: ubuntu-latest
     env:
@@ -29,5 +29,5 @@ jobs:
         with:
           cache-version: 1
         
-      - name: Scrape stale Geeks Who Drink quiz results
+      - name: Scrape Geeks Who Drink quiz results
         run: Rscript -e 'source(file.path("R", "1-scrape-new-geekswhodrink.R"), echo = FALSE)'
