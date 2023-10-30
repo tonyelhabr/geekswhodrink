@@ -1,11 +1,8 @@
 ---
 title: 'Geeks Who Drink'
-format: 
-  dashboard:
-    orientation: columns
-    theme:
-      light: [flatly, assets/styles.css]
-      dark: [darkly, assets/styles.css]
+format: dashboard
+orientation: columns
+theme: [flatly, assets/styles.scss]
 ---
 
 ```{r}
@@ -69,20 +66,23 @@ venues <- read_geekswhodrink_release_csv(
 #| padding: 0
 ## https://github.com/jjallaire/waste-sites-dashboard/blob/main/dashboard.qmd
 leaflet::leaflet() |> 
-  leaflet::addTiles() |> 
-  # addProviderTiles('CartoDB.Positron') |> 
-  # fitBounds(
-  #   lng1 = -127.44, 
-  #   lat1 = 24.05, 
-  #   lng2 = -65.30, 
-  #   lat2 = 50.35
-  # ) |> 
+  ##  CartoDB.Positron seems to be pretty popular among tutorials, but I personally like
+  ##  this one a bit more
+  leaflet::addProviderTiles('CartoDB.Voyager') |> 
+  ## US
   leaflet::fitBounds(
-    lng1 = -97.95,
-    lat1 = 30.12, 
-    lng2 = -97.56, 
-    lat2 = 30.52
-  ) |> 
+    lng1 = -127.44,
+    lat1 = 24.05,
+    lng2 = -65.30,
+    lat2 = 50.35
+  ) |>
+  ## Austin
+  # leaflet::fitBounds(
+  #   lng1 = -97.95,
+  #   lat1 = 30.12, 
+  #   lng2 = -97.56, 
+  #   lat2 = 30.52
+  # ) |> 
   leaflet::addMarkers(
     lng = venues$lon,
     lat = venues$lat,
