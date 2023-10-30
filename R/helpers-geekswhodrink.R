@@ -476,16 +476,27 @@ judiciously_scrape_x_geekswhodrink_venue_quiz_results <- function(venue_ids, des
     msg <- glue::glue('{msg} (i.e. venues with quiz results that have not been updated in past {STALE_QUIZ_RESULTS_DURATION} days.)')
   }
   cli::cli_inform(msg)
-  purrr::iwalk(
+  res <- purrr::map_dfr(
     venue_ids,
     \(venue_id, i) {
       cli::cli_inform('Scraping {i}/{n_venues} {descriptor} venues.')
       judiciously_scrape_geekswhodrink_venue_quiz_results(
         venue_id, 
         try_if_existing_has_zero_records = TRUE
-      )
+      ) |> 
+        dplyr::mutate(
+          venue_id = .env$venue_id,
+          .before = 1
+        )
     }
   )
+  
+  write_geekswhodrink_release_csv(
+    res,
+    name = paste0('quiz-results-', descriptor)
+    tag = 'data'
+  )
+  res
 }
 
 
@@ -504,11 +515,14 @@ get_existing_geekwhodrink_quiz_results_releases <- function() {
 
 judiciously_scrape_stale_geekswhodrink_venue_quiz_results <- function() {
   existing_releases<- get_existing_geekwhodrink_quiz_results_releases()
+  
   existing_releases_needing_update <- dplyr::filter(
     existing_releases,
     timestamp < lubridate::days(STALE_QUIZ_RESULTS_DURATION)
   )
+  
   venue_ids <- existing_releases_needing_update$venue_id
+  
   judiciously_scrape_x_geekswhodrink_venue_quiz_results(
     venue_ids = venue_ids,
     descriptor = 'stale'
@@ -517,6 +531,7 @@ judiciously_scrape_stale_geekswhodrink_venue_quiz_results <- function() {
 
 judiciously_scrape_new_geekswhodrink_venue_quiz_results <- function() {
   venues <- read_geekswhodrink_release_csv('venues')
+  
   existing_releases <- get_existing_geekwhodrink_quiz_results_releases()
   
   venue_ids <- setdiff(venues$venue_id, existing_releases$venue_id)
