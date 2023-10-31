@@ -33,6 +33,12 @@ read_geekswhodrink_release_csv <- function(name, ...) {
   )
 }
 
+possibly_read_geekswhodrink_release_csv <- purrr::possibly(
+  read_geekswhodrink_release_csv,
+  otherwise = data.frame(),
+  quiet = FALSE
+)
+
 read_geekswhodrink_release_json <- function(name, ...) {
   read_geekswhodrink_release(
     name = name,
@@ -202,14 +208,24 @@ write_geekswhodrink_quiz_results <- function(x, name, ...) {
   )
 }
 
-GWD_TOKEN <- Sys.getenv('GEEKS_WHO_DRINK_TOKEN')
 list_geekswhodrink_releases <- function(tag) {
-  piggyback::pb_list(
+  res <- piggyback::pb_list(
     repo = REPO, 
     tag = tag,
-    .token = GWD_TOKEN
-  )
+    .token = GITHUB_PAT
+  ) |> 
+    dplyr::mutate(
+      venue_id = as.numeric(tools::file_path_sans_ext(file_name)),
+      .before = 1
+    ) |> 
+    dplyr::arrange(timestamp, venue_id)
 }
+
+possibly_list_geekswhodrink_releases <- purrr::possibly(
+  list_geekswhodrink_releases,
+  otherwise = data.frame(),
+  quiet = FALSE
+)
 
 create_session_for_geekswhodrink_page <- function(venue_id, page = 1) {
   url <- paste0(BASE_URL, 'venues/', venue_id, '/?pag=', page)
@@ -501,26 +517,15 @@ judiciously_scrape_x_geekswhodrink_venue_quiz_results <- function(venue_ids, des
   res
 }
 
-get_existing_geekwhodrink_quiz_results_releases <- function() {
-  
-  list_geekswhodrink_releases('venue-quiz-results') |> 
-    dplyr::mutate(
-      venue_id = as.numeric(tools::file_path_sans_ext(file_name)),
-      .before = 1
-    ) |> 
-    dplyr::arrange(timestamp, venue_id)
-}
-
-
 judiciously_scrape_stale_geekswhodrink_venue_quiz_results <- function() {
-  existing_releases<- get_existing_geekwhodrink_quiz_results_releases()
+  existing_results <- possibly_list_geekswhodrink_releases('venue-quiz-results')
   
-  existing_releases_needing_update <- dplyr::filter(
-    existing_releases,
+  existing_results_needing_update <- dplyr::filter(
+    existing_results,
     timestamp < lubridate::days(STALE_QUIZ_RESULTS_DURATION)
   )
   
-  venue_ids <- existing_releases_needing_update$venue_id
+  venue_ids <- existing_results_needing_update$venue_id
   
   judiciously_scrape_x_geekswhodrink_venue_quiz_results(
     venue_ids = venue_ids,
@@ -531,12 +536,86 @@ judiciously_scrape_stale_geekswhodrink_venue_quiz_results <- function() {
 judiciously_scrape_new_geekswhodrink_venue_quiz_results <- function() {
   venues <- read_geekswhodrink_release_csv('venues')
   
-  existing_releases <- get_existing_geekwhodrink_quiz_results_releases()
+  existing_quiz_results <- get_existing_geekwhodrink_quiz_results()
   
-  venue_ids <- setdiff(venues$venue_id, existing_releases$venue_id)
+  venue_ids <- setdiff(venues$venue_id, existing_quiz_results$venue_id)
   
   judiciously_scrape_x_geekswhodrink_venue_quiz_results(
     venue_ids = venue_ids,
     descriptor = 'new'
+  )
+}
+
+
+scrape_venue_info <- function(venue_id) {
+  cli::cli_inform('Scraping {.var venue_id} = {.val {venue_id}}.')
+  page <- rvest::read_html(sprintf('https://www.geekswhodrink.com/venues/%s/?pag=1', venue_id))
+  venue_address_element <- rvest::html_element(page, '.venueHero__address')
+  raw_venue_address <- rvest::html_text2(venue_address_element)
+  venue_address <- gsub('^\\s+|\\s+$', '', gsub('Map It\\nVenue Link', '', raw_venue_address))
+  venue_hrefs <- rvest::html_elements(venue_address_element, 'a') |> 
+    html_attr('href')
+  last_venue_href <- rev(venue_hrefs)[1]
+  last_venue_href
+  list(
+    'venue_address' = venue_address,
+    'venue_link' = last_venue_href,
+    'updated_at' = TIMESTAMP
+  )
+}
+
+scrape_and_write_venue_info <- function(venue_id) {
+  Sys.sleep(stats::runif(1, min = 1, max = 2))
+  venue_info <- scrape_venue_info(venue_id)
+  write_geekswhodrink_release_json(
+    venue_info,
+    name = as.character(venue_id),
+    tag = 'venue-info'
+  )
+}
+
+## Different strategy compared to quiz results:
+## -  Check against stashed CSV and never re-scrape.
+judiciously_scrape_geekswhodrink_venue_info <- function() {
+  existing_quiz_result_releases <- possibly_list_geekswhodrink_releases('venue-quiz-results')
+  existing_venue_info_releases <- possibly_list_geekswhodrink_releases('venue-info')
+  
+  new_venue_ids <- setdiff(
+    existing_quiz_result_releases[['venue_id']],
+    existing_venue_info_releases[['venue_id']]
+  )
+  
+  existing_venue_info <- possibly_read_geekswhodrink_release_csv(
+    name = 'venue-info',
+    tag = 'data'
+  )
+  
+  if (length(new_venue_ids) == 0) {
+    cli::cli_inform('No new venue info to scrape')
+    return(existing_venue_info)
+  }
+
+  cli::cli_inform('Scraping venue info')
+  n_venues <- length(new_venue_ids)
+  new_venue_info <- purrr::imap_dfr(
+    new_venue_ids,
+    \(venue_id, i) {
+      cli::cli_inform('Scraping {i}/{n_venues} venues.')
+      res <- scrape_and_write_venue_info(venue_id)
+      res[['venue_id']] <- venue_id
+      res
+    }
+  )
+  
+  venue_info <- dplyr::bind_rows(
+    existing_venue_info,
+    new_venue_info
+  ) |> 
+    dplyr::relocate(venue_id, .before = 1)
+  
+  write_geekswhodrink_release_csv(
+    venue_info,
+    name = 'venue-info',
+    tag = 'data'
   )
 }

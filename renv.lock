@@ -659,16 +659,15 @@
     },
     "piggyback": {
       "Package": "piggyback",
-      "Version": "0.1.4",
-      "Source": "CRAN",
-      "Repository": "CRAN",
-      "RemoteType": "standard",
-      "RemotePkgRef": "piggyback",
-      "RemoteRef": "piggyback",
-      "RemoteRepos": "http://cran.rstudio.com/",
-      "RemotePkgPlatform": "i386+x86_64-w64-mingw32",
-      "RemoteSha": "0.1.4",
-      "Hash": "006bc382c1f4b40b30e19ce8503f0a91",
+      "Version": "0.1.5.9002",
+      "Source": "GitHub",
+      "RemoteType": "github",
+      "RemoteHost": "api.github.com",
+      "RemoteUsername": "ropensci",
+      "RemoteRepo": "piggyback",
+      "RemoteRef": "master",
+      "RemoteSha": "a9f498e7fdc7112c24c91dd9f1005b22b5935b88",
+      "Hash": "8500675b2ab9beeb5724ce2f1fc2a5ac",
       "Requirements": [
         "cli",
         "fs",
@@ -676,7 +675,6 @@
         "glue",
         "httr",
         "jsonlite",
-        "lubridate",
         "memoise"
       ]
     },

@@ -1,6 +1,12 @@
-venv/
-src/__pycache__/
 .Rproj.user
-README-dev.md
 /.quarto/
 docs/
+
+## poetry
+.venv/
+.env
+
+## pip
+venv/
+
+**/__pycache__/**

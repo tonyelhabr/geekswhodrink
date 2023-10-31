@@ -10,6 +10,16 @@ Reference:
 $font-family-sans-serif: 'Titillium Web';
 $font-family-monospace: 'Fira Code';
 
-$font-size-root: 80%;
+$font-size-root: 90%;
+$line-height: 1;
 $navbar-bg: #1C1C1C;
 $navbar-fg: #FFFFFF;
+
+.card-header {
+  font-size: large;
+}
+
+
+.$navbar-title-text {
+  font-size: large;
+}

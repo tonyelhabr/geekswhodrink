@@ -56,6 +56,11 @@ venues <- read_geekswhodrink_release_csv(
     lat,
     lon
   )
+
+# quiz_results <- read_geekswhodrink_release_csv(
+#   name = 'quiz-results',
+#   tag = 'data'
+# )
 ```
 
 ## Column {width="60%"}
