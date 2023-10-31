@@ -6,11 +6,33 @@ This repo stores public [*Geeks Who Drink*](https://www.geekswhodrink.com/) quiz
 
 *Geeks Who Drink* is a company that hosts pub quizzes and trivia events across the United States and in some international locations. Founded in 2006, the company hosts weekly quizzes at bars and restaurants, as well as special events and themed quizzes. Their quizzes cover a wide range of topics, including pop culture, history, science, and more, and are designed to be fun and entertaining for participants of all levels of knowledge. *Geeks Who Drink* has gained a reputation for hosting some of the best pub quizzes around and has been featured in media outlets such as The New York Times and NPR.
 
-## Data
+## Repo Structure
+
+1. There are a set of R and python scripts in `scripts/` for data ingestion.
+    - `scripts/src/`: Python modules for functions for python script.
+    - `scripts/helpers-geekswhodrink: R functions for R scripts.
+    - `scripts/[012]-*[.](R|py)`: Scraping and ingestion
+2. There is a [Quarto](https://quarto.org/) [dashboard](https://tonyelhabr.github.io/geekswhodrink/) defined at the top-level of this project.
+    - `index.qmd`: Dashboard
+    - `_quarto.yml`: Configuration
+    - `assets/styles.scss`: Custom theming
+3. Data is stored in [GitHub releases](https://github.com/tonyelhabr/geekswhodrink/releases).
+
+Python package management is handled with [poetry](https://python-poetry.org/).
+- `pyproject.toml`, `poetry.lock`: Files associated with [poetry](https://python-poetry.org/) for package managements.
+- `.venv/` is the virtual environment folder.
+`.env` has environment variables for local development 
+
+R package management is handled with [{renv}](https://rstudio.github.io/renv/).
+- `renv.lock`, `renv/`: `{renv}` files.
+- `"data"` profile for data ingestion; `"viz"` profile for dashboarding.
+
+## Available Data
 
 | File | Download |
 | :----| :------- |
 | `venues.csv` | [Download](https://github.com/tonyelhabr/geekswhodrink/releases/download/data/venues.csv) |
+| `venue-info.csv` | [Download](https://github.com/tonyelhabr/geekswhodrink/releases/download/data/venue-info.csv) |
 | `quiz-results.csv` | [Download](https://github.com/tonyelhabr/geekswhodrink/releases/download/data/quiz-results.csv) |
 
 Individual venue quiz results can be downloaded at `https://github.com/tonyelhabr/geekswhodrink/releases/download/venue-quiz-results/{venue_id}.json`
@@ -20,8 +42,6 @@ Individual venue quiz results can be downloaded at `https://github.com/tonyelhab
 | Action |
 | ------ |
 | [![Scrape Geeks Who Drink venues](https://github.com/tonyelhabr/geekswhodrink/actions/workflows/scrape-geekswhodrink-venues.yml/badge.svg)](https://github.com/tonyelhabr/geekswhodrink/actions/workflows/scrape-geekswhodrink-venues.yml) |
-[![Scrape stale Geeks Who Drink quiz results](https://github.com/tonyelhabr/geekswhodrink/actions/workflows/scrape-stale-geekswhodrink-quiz-results.yml/badge.svg)](https://github.com/tonyelhabr/geekswhodrink/actions/workflows/scrape-stale-geekswhodrink-quiz-results.yml) |
-[![Scrape new Geeks Who Drink quiz results](https://github.com/tonyelhabr/geekswhodrink/actions/workflows/scrape-new-geekswhodrink-quiz-results.yml/badge.svg)](https://github.com/tonyelhabr/geekswhodrink/actions/workflows/scrape-new-geekswhodrink-quiz-results.yml)
 
 ### Dictionary
 
@@ -88,16 +108,16 @@ Each venue's quiz results come with the following structure.
 }
 ```
 
-For example, for a quiz run on Feb. 16, 2023, (the seventh week of 2023) where three teams competed, the venue's results would look like this.
+For example, for a quiz run on Feb. 16, 2023, (the seventh week of 2023) where four teams competed, the venue's results would look like this.
 
 ```json
 {
   "2023-W07": {
     "meta": {
       "quiz_date": "2023-02-16",
-      "n_teams": 3,
+      "n_teams": 4,
       "max_score": 91,
-      "min_score": 83,
+      "min_score": 70,
       "3rd_score": 83,
       "updated_at": "2023-02-20 10:09:42"
     },
@@ -116,6 +136,11 @@ For example, for a quiz run on Feb. 16, 2023, (the seventh week of 2023) where t
         "placing": 3,
         "team": "That's what she said",
         "score": 83
+      },
+      {
+        "placing": 3,
+        "team": "We're on a boat",
+        "score": 70
       }
     ]
   }
