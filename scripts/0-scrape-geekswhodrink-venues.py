@@ -1,5 +1,4 @@
 # %%
-import time
 import pandas as pd
 from bs4 import BeautifulSoup
 from selenium import webdriver
@@ -12,12 +11,6 @@ from datetime import datetime
 from urllib.parse import urlencode, urlunparse
 from dotenv import load_dotenv
 
-## for some reason a relative import of utils with ..src.utils is not working
-##   so this is my workaround.
-# import os
-
-# if os.path.basename(os.getcwd()) == "scripts":
-#     os.chdir("..")
 from src.utils import create_or_update_geekswhodrink_release
 
 load_dotenv()
@@ -25,12 +18,12 @@ load_dotenv()
 # %%
 chromedriver_autoinstaller.install()
 chrome_options = webdriver.ChromeOptions()
-# options = [
-#     "--headless",
-# ]
+options = [
+    "--headless",
+]
 
-# for option in options:
-#     chrome_options.add_argument(option)
+for option in options:
+    chrome_options.add_argument(option)
 
 
 # %%
@@ -91,57 +84,5 @@ def process_and_save_geekswhodrink_venues(location: str, file_name: str):
 
 # %%
 process_and_save_geekswhodrink_venues(location="", file_name="venues.csv")
-
-# %%
 process_and_save_geekswhodrink_venues(location="Austin", file_name="austin-venues.csv")
 
-# %%
-venues_sa = process_and_save_geekswhodrink_venues(
-    location="San Antonio", file_name="san-antonio-venues.csv"
-)
-
-# %%
-location = 'San Antonio'
-driver = webdriver.Chrome(options=chrome_options)
-url = build_geekswhodrink_venue_search_url(location=location)
-driver.get(url)
-
-try:
-    # Look for the popup button by its class and type attributes
-    popup_button = WebDriverWait(driver, 10).until(
-        EC.presence_of_element_located((By.XPATH, '//button[@class="pum-close popmake-close" and @type="button"]'))
-    )
-    # Close the popup by clicking the button
-    popup_button.click()
-except NoSuchElementException:
-    print("Popup button not found.")
-#%%
-soup = BeautifulSoup(driver.page_source, "html.parser")
-results = soup.find_all("div", class_="find__col find__col--list")
-results
-
-#%%
-data = []
-for result in results:
-    quiz_blocks = result.find_all(
-        "a", class_="quizBlock-returned"
-    )
-    for quiz_block in quiz_blocks:
-        data.append(
-            {
-                "venue_id": quiz_block["data-podio"],
-                "url": quiz_block["href"],
-                "lat": quiz_block["data-lat"],
-                "lon": quiz_block["data-lon"],
-                "name": quiz_block["data-title"],
-                "address": quiz_block["data-address"],
-            }
-        )
-#%%
-venues = pd.DataFrame(data)
-#%%
-current_time = datetime.now()
-venues["updated_at"] = current_time.strftime("%Y-%m-%d %H:%M:%S")
-create_or_update_geekswhodrink_release(df=venues, file_name="san-antonio-venues.csv")
-driver.quit()
-#%%
