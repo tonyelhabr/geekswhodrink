@@ -36,26 +36,90 @@ read_geekswhodrink_release_csv <- function(name, ...) {
   )
 }
 
-ADDRESS_SUFFIX_REGEX <- '\\,\\s([A-Z]{2})\\s([0-9]+$)'
-str_replace_address <- function(x, i) {
-  stringr::str_replace(x, paste0('(^.*)', ADDRESS_SUFFIX_REGEX), paste0('\\', i))
-}
+## pull ----
+raw_venue_info <- read_geekswhodrink_release_csv(
+  name = 'venue-info',
+  tag = 'data'
+)
 
-venues <- read_geekswhodrink_release_csv(
+raw_venues <- read_geekswhodrink_release_csv(
   name = 'venues',
   tag = 'data'
-) |> 
+)
+
+## combine ----
+convert_10_digit_zip_to_5_digit_zip <- function(x) {
+  stringr::str_remove(x, '-[0-9]{4}$')
+}
+
+str_replace_address <- function(x, i) {
+  stringr::str_replace(x, paste0('(^.*)', '\\,\\s([A-Z]{2})\\s([0-9]+$)'), paste0('\\', i))
+}
+
+venue_info <- raw_venue_info |> 
+  dplyr::transmute(
+    venue_id,
+    venue_address_line_1,
+    venue_address_line_2  = convert_10_digit_zip_to_5_digit_zip(venue_address_line_2),
+    ## TODO: Fix 2336767042 and 1260079721
+    venue_address = dplyr::na_if(venue_address, 'NA\nNA'),
+    venue_link,
+    venue_info_updated_at = updated_at,
+  )
+
+venues <- raw_venues |> 
+  dplyr::mutate(
+    address = convert_10_digit_zip_to_5_digit_zip(address)
+  ) |> 
+  dplyr::left_join(
+    venue_info,
+    by = dplyr::join_by(venue_id)
+  ) |> 
   dplyr::transmute(
     venue_id,
     name,
-    full_address = address,
-    address_no_state_zip = stringr::str_remove(full_address, ADDRESS_SUFFIX_REGEX),
-    state = stringr::str_remove(full_address, '[-][0-9]{4}$') |> str_replace_address(2),
-    city = stringr::str_remove(full_address, '[-][0-9]{4}$') |> str_replace_address(1),
-    zip = str_replace_address(full_address, 3),
+    html_name = sprintf(
+      '%s%s%s', 
+      ifelse(
+        !is.na(venue_link),
+        sprintf("<a href='%s' target='_blank'>", venue_link),
+        ''
+      ),
+      name,
+      ifelse(
+        !is.na(venue_link),
+        '</a>',
+        ''
+      )
+    ),
+    ## venue only is in the venue-info release if it has results
+    has_results = !is.na(venue_info_updated_at),
+    venue_link,
+    full_address = dplyr::coalesce(
+      venue_address,
+      address
+    ),
+    address_line_1 = dplyr::coalesce(
+      venue_address_line_1, 
+      stringr::str_remove(address, ADDRESS_SUFFIX_REGEX)
+    ),
+    # city = dplyr::coalesce(
+    #   str_replace_address(venue_address_line_2, 1),
+    #   str_replace_address(address, 1)
+    # ),
+    city = str_replace_address(venue_address_line_2, 1),
+    state = dplyr::coalesce(
+      str_replace_address(venue_address_line_2, 2),
+      str_replace_address(address, 2)
+    ),
+    zip = dplyr::coalesce(
+      str_replace_address(venue_address_line_2, 3),
+      str_replace_address(full_address, 3)
+    ),
     lat,
     lon
-  )
+  ) |> 
+  dplyr::arrange(state, name)
 
 # quiz_results <- read_geekswhodrink_release_csv(
 #   name = 'quiz-results',
@@ -92,9 +156,19 @@ leaflet::leaflet() |>
     lng = venues$lon,
     lat = venues$lat,
     label = sprintf(
-      '<strong>%s</strong><br/>%s<br/>%s, %s',
+      '<strong>%s%s%s</strong><br/>%s<br/>%s, %s',
+      ifelse(
+        !is.na(venues$venue_link),
+        sprintf("<a href='%s' target='_blank'>", venues$venue_link),
+        ''
+      ),
       venues$name,
-      venues$address_no_state_zip,
+      ifelse(
+        !is.na(venues$venue_link),
+        '</a>',
+        ''
+      ),
+      venues$address_line_1,
       venues$state,
       venues$zip
     ) |>
@@ -113,16 +187,29 @@ leaflet::leaflet() |>
 #| title: Quiz venues
 venues |> 
   dplyr::select(
-    `State` = state,
-    `Name` = name,
-    `Address` = address_no_state_zip,
-    `Venue ID` = venue_id
+    state,
+    city,
+    name,
+    address_line_1,
+    venue_id
   ) |> 
   reactable::reactable(
+    columns = list(
+      state = reactable::colDef(name = 'State'),
+      city = reactable::colDef(name = 'City'),
+      name = reactable::colDef(
+        html = TRUE,
+        name = 'Name',
+        cell = function(value, index) {
+          venues$html_name[index]
+        }),
+      address_line_1 = reactable::colDef(name = 'Address'),
+      venue_id = reactable::colDef(name = 'Venue ID')
+    ),
     defaultPageSize = 10,
     sortable = TRUE,
     filterable = TRUE,
-    defaultSorted = c('State', 'Name'),
+    defaultSorted = c('state', 'city', 'name'),
     defaultSortOrder = 'asc',
     pagination = TRUE
   )
