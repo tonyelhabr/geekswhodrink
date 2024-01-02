@@ -1,4 +1,4 @@
-source(file.path('R', 'helpers-geekswhodrink.R'))
+source(file.path('scripts', 'helpers-geekswhodrink.R'))
 
 existing_quiz_result_batches <- list_geekswhodrink_releases('data') |> 
     dplyr::filter(grepl('quiz-results-', file_name)) |> 
