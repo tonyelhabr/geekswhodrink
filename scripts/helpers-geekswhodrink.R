@@ -546,19 +546,26 @@ judiciously_scrape_new_geekswhodrink_venue_quiz_results <- function() {
   )
 }
 
-
 scrape_venue_info <- function(venue_id) {
   cli::cli_inform('Scraping {.var venue_id} = {.val {venue_id}}.')
-  page <- rvest::read_html(sprintf('https://www.geekswhodrink.com/venues/%s/?pag=1', venue_id))
+  page <- rvest::read_html(paste0(BASE_URL, 'venues/', venue_id))
   venue_address_element <- rvest::html_element(page, '.venueHero__address')
   raw_venue_address <- rvest::html_text2(venue_address_element)
-  venue_address <- gsub('^\\s+|\\s+$', '', gsub('Map It\\nVenue Link', '', raw_venue_address))
+  raw_venue_address_parts <- strsplit(raw_venue_address, '\n')[[1]]
+  address_line_1 <- raw_venue_address_parts[1]
+  address_line_2 <- gsub(' Map It', '', raw_venue_address_parts[2])
   venue_hrefs <- rvest::html_elements(venue_address_element, 'a') |> 
-    html_attr('href')
-  last_venue_href <- rev(venue_hrefs)[1]
-  last_venue_href
+    rvest::html_attr('href')
+  last_venue_href <- venue_hrefs[2]
   list(
-    'venue_address' = venue_address,
+    'venue_address_line_1' = address_line_1,
+    'venue_address_line_2' = address_line_2,
+    ## TODO: Fix 2336767042, 1260079721, and 1969930083
+    'venue_address' = dplyr::case_when(
+      is.na(address_line_1) & is.na(address_line_2) ~ NA_character_,
+      is.na(address_line_2) ~ address_line_1,
+      TRUE ~ paste0(address_line_1, '\n', address_line_2)
+    ),
     'venue_link' = last_venue_href,
     'updated_at' = TIMESTAMP
   )
@@ -572,6 +579,7 @@ scrape_and_write_venue_info <- function(venue_id) {
     name = as.character(venue_id),
     tag = 'venue-info'
   )
+  venue_info
 }
 
 ## Different strategy compared to quiz results:
@@ -601,7 +609,11 @@ judiciously_scrape_geekswhodrink_venue_info <- function() {
     new_venue_ids,
     \(venue_id, i) {
       cli::cli_inform('Scraping {i}/{n_venues} venues.')
-      res <- scrape_and_write_venue_info(venue_id)
+      # res <- scrape_and_write_venue_info(venue_id)
+      res <- read_geekswhodrink_release_json(
+        name = as.character(venue_id),
+        tag = 'venue-info'
+      )
       res[['venue_id']] <- venue_id
       res
     }
