@@ -49,5 +49,5 @@ jobs:
         run: poetry install --no-interaction
         
       - name: Scrape venues
-        run: python scripts/0-scrape-geekswhodrink-venues.py
+        run: python scripts/0-scrape-venues.py
 

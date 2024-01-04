@@ -1,4 +1,4 @@
-source(file.path('scripts', 'helpers-geekswhodrink.R'))
+source(file.path('scripts', 'helpers'))
 
 existing_quiz_result_batches <- list_geekswhodrink_releases('data') |> 
     dplyr::filter(grepl('quiz-results-', file_name)) |> 
@@ -6,10 +6,7 @@ existing_quiz_result_batches <- list_geekswhodrink_releases('data') |>
 
 venue_ids <- existing_releases$venue_id
 n_venues <- length(venue_ids)
-possibly_read_geekswhodrink_venue_quiz_results <- purrr::possibly(
-  read_geekswhodrink_venue_quiz_results,
-  otherwise = tibble::tibble()
-)
+
 all_quiz_results <- purrr::map_dfr(
   existing_quiz_result_batches$file_name,
   \(.name) {

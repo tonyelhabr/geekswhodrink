@@ -1,4 +1,4 @@
-name: Scrape new Geeks Who Drink quiz results
+name: Scrape stale quiz results
 
 on:
   schedule:
@@ -29,6 +29,8 @@ jobs:
         with:
           cache-version: 1
         
-      - name: Scrape Geeks Who Drink quiz results
-        run: Rscript -e 'source(file.path("R", "1-scrape-geekswhodrink.R"), echo = FALSE)'
+      - name: Scrape stale quize results
+        run: Rscript -e 'source(file.path("R", "1-scrape-quiz-results.R"), echo = FALSE)'
 
+      - name: Combine quiz results
+        run: Rscript -e 'source(file.path("R", "2-combine-quiz-results.R"), echo = FALSE)'

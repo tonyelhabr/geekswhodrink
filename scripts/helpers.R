@@ -14,8 +14,9 @@ suppressPackageStartupMessages(suppressWarnings({
 STALE_QUIZ_RESULTS_DURATION <- 6
 ## Choose a number that roughly corresponds to the number of months to do a "lookback" scrape for.
 ##   If the GitHub Action has been actively running, this should just be 1.
-MAX_PAGE <- 1
+MAX_PAGE <- 2
 TIMESTAMP <- lubridate::now()
+MAX_SCRAPE_DURATION_MINUTES <- 30 ## how long can one of the `judiciously_` functions run before we cut it off for GHA
 
 BASE_URL <- 'https://www.geekswhodrink.com/'
 REPO <- 'tonyelhabr/geekswhodrink'
@@ -90,9 +91,9 @@ convert_quiz_results_list_to_df <- function(x) {
   )
 }
 
-read_geekswhodrink_venue_quiz_results <- function(name) {
+read_geekswhodrink_venue_quiz_results <- function(venue_id) {
   res <- read_geekswhodrink_release_json(
-    name = name,
+    name = venue_id,
     tag = 'venue-quiz-results'
   )
   convert_quiz_results_list_to_df(res)
@@ -105,10 +106,8 @@ safely_read_geekswhodrink_venue_quiz_results <- purrr::safely(
 
 possibly_read_geekswhodrink_venue_quiz_results <- purrr::possibly(
   read_geekswhodrink_venue_quiz_results,
-  otherwise = list(),
-  quiet = TRUE
+  otherwise = tibble::tibble()
 )
-
 
 GITHUB_PAT <- Sys.getenv('GEEKS_WHO_DRINK_TOKEN')
 write_geekswhodrink_release <- function(x, name, ext, f, tag = 'data') {
@@ -386,16 +385,15 @@ judiciously_scrape_geekswhodrink_venue_quiz_results <- function(
 ) {
   res_existing <- safely_read_geekswhodrink_venue_quiz_results(venue_id)
   
-  release_file_exists <- TRUE
   existing_quiz_results <- res_existing$result
   max_page <- NULL
   
-  existing_has_error <- !is.null(res_existing$error)
+  release_file_exists <- is.null(res_existing$error)
   ## TODO: Coalesce logic for file with 0 rows and no existing file.
   ## Note that we use && instead of & to "escape early" in the case that reading in the file
   ##   encountered an error.
-  existing_has_zero_records <- isFALSE(existing_has_error) && (nrow(existing_quiz_results) == 0)
-  if (existing_has_error | existing_has_zero_records) {
+  existing_has_zero_records <- isTRUE(release_file_exists) && (nrow(existing_quiz_results) == 0)
+  if (isFALSE(release_file_exists) | isTRUE(existing_has_zero_records)) {
     cli::cli_warn('No existing release file for {.var venue_id} = {.val {venue_id}} .')
     existing_quiz_results <- NULL
     has_existing_quiz_results <- FALSE
@@ -460,6 +458,7 @@ judiciously_scrape_geekswhodrink_venue_quiz_results <- function(
         ## if we had non-zero existing records
         return(existing_quiz_results)
       } else {
+        cli::cli_inform(c('i' = 'Returning NULL for an unexpected reason. TODO: Look into this.'))
         ## could just return existing_quiz_results if it were a data.frame
         return(NULL)
       }
@@ -494,11 +493,17 @@ judiciously_scrape_x_geekswhodrink_venue_quiz_results <- function(venue_ids, des
     msg <- glue::glue('{msg} (i.e. venues with quiz results that have not been updated in past {STALE_QUIZ_RESULTS_DURATION} days.)')
   }
   cli::cli_inform(msg)
-  res <- purrr::imap_dfr(
+  t1 <- Sys.time()
+  purrr::imap_dfr(
     venue_ids,
     \(venue_id, i) {
       cli::cli_inform('Scraping {i}/{n_venues} {descriptor} venues.')
-      judiciously_scrape_geekswhodrink_venue_quiz_results(
+      if (difftime(Sys.time(), t1, units = 'mins') > MAX_SCRAPE_DURATION_MINUTES) {
+        return(
+          possibly_read_geekswhodrink_venue_quiz_results(venue_id)
+        )
+      }
+      res <- judiciously_scrape_geekswhodrink_venue_quiz_results(
         venue_id, 
         try_if_existing_has_zero_records = TRUE
       ) |> 
@@ -522,7 +527,7 @@ judiciously_scrape_stale_geekswhodrink_venue_quiz_results <- function() {
   
   existing_results_needing_update <- dplyr::filter(
     existing_results,
-    timestamp < lubridate::days(STALE_QUIZ_RESULTS_DURATION)
+    timestamp < (lubridate::today() - lubridate::days(STALE_QUIZ_RESULTS_DURATION))
   )
   
   venue_ids <- existing_results_needing_update$venue_id
@@ -536,9 +541,9 @@ judiciously_scrape_stale_geekswhodrink_venue_quiz_results <- function() {
 judiciously_scrape_new_geekswhodrink_venue_quiz_results <- function() {
   venues <- read_geekswhodrink_release_csv('venues')
   
-  existing_quiz_results <- get_existing_geekwhodrink_quiz_results()
+  existing_results <- possibly_list_geekswhodrink_releases('venue-quiz-results')
   
-  venue_ids <- setdiff(venues$venue_id, existing_quiz_results$venue_id)
+  venue_ids <- setdiff(venues$venue_id, existing_results$venue_id)
   
   judiciously_scrape_x_geekswhodrink_venue_quiz_results(
     venue_ids = venue_ids,
