@@ -17,9 +17,10 @@ STALE_QUIZ_RESULTS_DURATION <- 6
 MAX_PAGE <- 2
 TIMESTAMP <- lubridate::now()
 MAX_SCRAPE_DURATION_MINUTES <- 30 ## how long can one of the `judiciously_` functions run before we cut it off for GHA
-
+GITHUB_PAT <- Sys.getenv('GEEKS_WHO_DRINK_TOKEN')
 BASE_URL <- 'https://www.geekswhodrink.com/'
 REPO <- 'tonyelhabr/geekswhodrink'
+
 read_release <- function(name, ext, f, tag = 'data') {
   url <- sprintf('https://github.com/%s/releases/download/%s/%s.%s', REPO, tag, name, ext)
   f(url)
@@ -109,7 +110,6 @@ possibly_read_venue_quiz_results <- purrr::possibly(
   otherwise = tibble::tibble()
 )
 
-GITHUB_PAT <- Sys.getenv('GEEKS_WHO_DRINK_TOKEN')
 write_release <- function(x, name, ext, f, tag = 'data') {
   temp_dir <- tempdir(check = TRUE)
   basename <- sprintf('%s.%s', name, ext)
@@ -494,16 +494,17 @@ judiciously_scrape_x_venue_quiz_results <- function(venue_ids, descriptor) {
   }
   cli::cli_inform(msg)
   t1 <- Sys.time()
-  purrr::imap_dfr(
+  res <- purrr::imap_dfr(
     venue_ids,
     \(venue_id, i) {
       cli::cli_inform('Scraping {i}/{n_venues} {descriptor} venues.')
       if (difftime(Sys.time(), t1, units = 'mins') > MAX_SCRAPE_DURATION_MINUTES) {
+        cli::cli_inform('Skipping {venue_id} early because this function has been running for over {MAX_SCRAPE_DURATION_MINUTES} minutes.')
         return(
           possibly_read_venue_quiz_results(venue_id)
         )
       }
-      res <- judiciously_scrape_venue_quiz_results(
+      judiciously_scrape_venue_quiz_results(
         venue_id, 
         try_if_existing_has_zero_records = TRUE
       ) |> 
