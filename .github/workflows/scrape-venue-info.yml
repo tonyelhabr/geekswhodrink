@@ -1,12 +1,12 @@
-name: Scrape stale quiz results
+name: Scrape new quiz results
 
 on:
   schedule:
-    - cron: '0 8 * * *'
+    - cron: '0 22 * * 6'
   workflow_dispatch:
 
 jobs:
-  scrape-and-combine:
+  scrape:
     ## Don't use macOS? https://github.com/actions/runner-images/issues/602
     runs-on: ubuntu-latest
     env:
@@ -31,8 +31,4 @@ jobs:
           cache-version: 1
         
       - name: Scrape stale quize results
-        run: Rscript -e 'source(file.path("R", "1-scrape-stale-quiz-results.R"), echo = FALSE)'
-
-      ## Only combine here since we run this script more often than the script for "new" venues
-      - name: Combine quiz results
-        run: Rscript -e 'source(file.path("R", "2-combine-quiz-results.R"), echo = FALSE)'
+        run: Rscript -e 'source(file.path("R", "1-scrape-new-quiz-results.R"), echo = FALSE)'
