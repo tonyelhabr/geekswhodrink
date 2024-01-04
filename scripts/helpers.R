@@ -20,13 +20,13 @@ MAX_SCRAPE_DURATION_MINUTES <- 30 ## how long can one of the `judiciously_` func
 
 BASE_URL <- 'https://www.geekswhodrink.com/'
 REPO <- 'tonyelhabr/geekswhodrink'
-read_geekswhodrink_release <- function(name, ext, f, tag = 'data') {
+read_release <- function(name, ext, f, tag = 'data') {
   url <- sprintf('https://github.com/%s/releases/download/%s/%s.%s', REPO, tag, name, ext)
   f(url)
 }
 
-read_geekswhodrink_release_csv <- function(name, ...) {
-  read_geekswhodrink_release(
+read_release_csv <- function(name, ...) {
+  read_release(
     name = name,
     ext = 'csv',
     f = function(path) { readr::read_csv(path, show_col_types = FALSE) },
@@ -34,14 +34,14 @@ read_geekswhodrink_release_csv <- function(name, ...) {
   )
 }
 
-possibly_read_geekswhodrink_release_csv <- purrr::possibly(
-  read_geekswhodrink_release_csv,
+possibly_read_release_csv <- purrr::possibly(
+  read_release_csv,
   otherwise = data.frame(),
   quiet = FALSE
 )
 
-read_geekswhodrink_release_json <- function(name, ...) {
-  read_geekswhodrink_release(
+read_release_json <- function(name, ...) {
+  read_release(
     name = name,
     ext = 'json',
     f = function(path) { jsonlite::read_json(path) },
@@ -91,26 +91,26 @@ convert_quiz_results_list_to_df <- function(x) {
   )
 }
 
-read_geekswhodrink_venue_quiz_results <- function(venue_id) {
-  res <- read_geekswhodrink_release_json(
+read_venue_quiz_results <- function(venue_id) {
+  res <- read_release_json(
     name = venue_id,
     tag = 'venue-quiz-results'
   )
   convert_quiz_results_list_to_df(res)
 }
 
-safely_read_geekswhodrink_venue_quiz_results <- purrr::safely(
-  read_geekswhodrink_venue_quiz_results,
+safely_read_venue_quiz_results <- purrr::safely(
+  read_venue_quiz_results,
   otherwise = list()
 )
 
-possibly_read_geekswhodrink_venue_quiz_results <- purrr::possibly(
-  read_geekswhodrink_venue_quiz_results,
+possibly_read_venue_quiz_results <- purrr::possibly(
+  read_venue_quiz_results,
   otherwise = tibble::tibble()
 )
 
 GITHUB_PAT <- Sys.getenv('GEEKS_WHO_DRINK_TOKEN')
-write_geekswhodrink_release <- function(x, name, ext, f, tag = 'data') {
+write_release <- function(x, name, ext, f, tag = 'data') {
   temp_dir <- tempdir(check = TRUE)
   basename <- sprintf('%s.%s', name, ext)
   temp_path <- file.path(temp_dir, basename)
@@ -123,8 +123,8 @@ write_geekswhodrink_release <- function(x, name, ext, f, tag = 'data') {
   )
 }
 
-write_geekswhodrink_release_csv <- function(x, name, ...) {
-  write_geekswhodrink_release(
+write_release_csv <- function(x, name, ...) {
+  write_release(
     x = x,
     name = as.character(name),
     ext = 'csv',
@@ -139,8 +139,8 @@ write_geekswhodrink_release_csv <- function(x, name, ...) {
   )
 }
 
-write_geekswhodrink_release_json <- function(x, name, ...) {
-  write_geekswhodrink_release(
+write_release_json <- function(x, name, ...) {
+  write_release(
     x = x,
     name = as.character(name),
     ext = 'json',
@@ -197,17 +197,17 @@ convert_quiz_results_df_to_list <- function(df) {
 }
 
 
-write_geekswhodrink_quiz_results <- function(x, name, ...) {
+write_quiz_results <- function(x, name, ...) {
   res <- convert_quiz_results_df_to_list(x)
   
-  write_geekswhodrink_release_json(
+  write_release_json(
     x = res,
     name = as.character(name),
     tag = 'venue-quiz-results'
   )
 }
 
-list_geekswhodrink_releases <- function(tag) {
+list_releases <- function(tag) {
   res <- piggyback::pb_list(
     repo = REPO, 
     tag = tag,
@@ -220,20 +220,20 @@ list_geekswhodrink_releases <- function(tag) {
     dplyr::arrange(timestamp, venue_id)
 }
 
-possibly_list_geekswhodrink_releases <- purrr::possibly(
-  list_geekswhodrink_releases,
+possibly_list_releases <- purrr::possibly(
+  list_releases,
   otherwise = data.frame(),
   quiet = FALSE
 )
 
-create_session_for_geekswhodrink_page <- function(venue_id, page = 1) {
+create_session_for_page <- function(venue_id, page = 1) {
   url <- paste0(BASE_URL, 'venues/', venue_id, '/?pag=', page)
   rvest::read_html_live(url)
 }
 
-scrape_tables_from_geekswhodrink_venue_page <- function(venue_id, page, session = NULL) {
+scrape_tables_from_venue_page <- function(venue_id, page, session = NULL) {
   if (is.null(session)) {
-    session <- create_session_for_geekswhodrink_page(
+    session <- create_session_for_page(
       venue_id = venue_id,
       page = page
     )
@@ -285,16 +285,16 @@ scrape_tables_from_geekswhodrink_venue_page <- function(venue_id, page, session 
   res
 }
 
-quietly_scrape_tables_from_geekswhodrink_venue_page <- purrr::quietly(
-  scrape_tables_from_geekswhodrink_venue_page
+quietly_scrape_tables_from_venue_page <- purrr::quietly(
+  scrape_tables_from_venue_page
 )
-safely_quietly_scrape_tables_from_geekswhodrink_venue_page <- purrr::safely(
-  quietly_scrape_tables_from_geekswhodrink_venue_page,
+safely_quietly_scrape_tables_from_venue_page <- purrr::safely(
+  quietly_scrape_tables_from_venue_page,
   otherwise = data.frame(),
   quiet = FALSE
 )
 
-clean_geekswhodrink_quiz_results <- function(df) {
+clean_quiz_results <- function(df) {
   df |> 
     dplyr::transmute(
       # venue_id,
@@ -305,10 +305,10 @@ clean_geekswhodrink_quiz_results <- function(df) {
     )
 }
 
-scrape_geekswhodrink_venue_quiz_results <- function(venue_id, max_page = NULL) {
+scrape_venue_quiz_results <- function(venue_id, max_page = NULL) {
   cli::cli_inform('Scraping {.var venue_id} = {.val {venue_id}}.')
   
-  p1_session <- create_session_for_geekswhodrink_page(venue_id, page = 1)
+  p1_session <- create_session_for_page(venue_id, page = 1)
   Sys.sleep(stats::runif(1, min = 2, max = 3))
   page_links <- p1_session$html_elements('.quiz__pag') |>
     rvest::html_children() |>
@@ -316,11 +316,11 @@ scrape_geekswhodrink_venue_quiz_results <- function(venue_id, max_page = NULL) {
   
   if (length(page_links) == 0) {
     cli::cli_abort("Couldn't find any page links on the first page of the venue.")
-    res <- safely_quietly_scrape_tables_from_geekswhodrink_venue_page(session = p1_session)
+    res <- safely_quietly_scrape_tables_from_venue_page(session = p1_session)
     if (!is.null(res$result[['warning']])) {
       cli::cli_warn(res$result[['warning']])
     }
-    return(clean_geekswhodrink_quiz_results(res$result[['result']]))
+    return(clean_quiz_results(res$result[['result']]))
   }
   
   last_valid_page <- as.integer(rev(page_links)[2])
@@ -337,17 +337,17 @@ scrape_geekswhodrink_venue_quiz_results <- function(venue_id, max_page = NULL) {
   }
   
   if (max_page == 1) {
-    res <- safely_quietly_scrape_tables_from_geekswhodrink_venue_page(session = p1_session)
+    res <- safely_quietly_scrape_tables_from_venue_page(session = p1_session)
     if (!is.null(res$result[['warning']])) {
       cli::cli_warn(res$result[['warning']])
     }
-    return(clean_geekswhodrink_quiz_results(res$result[['result']]))
+    return(clean_quiz_results(res$result[['result']]))
   }
   
   tbs <- vector(mode = 'list', length = max_page)
   for(i in seq_along(1:max_page)) {
     cli::cli_inform(c('i' = 'Scraping page {i} for {.var venue_id} = {.val {venue_id}}.'))
-    res <- safely_quietly_scrape_tables_from_geekswhodrink_venue_page(venue_id, page = i)
+    res <- safely_quietly_scrape_tables_from_venue_page(venue_id, page = i)
     if (!is.null(res$error)) {
       cli::cli_warn(res$error$message)
       break
@@ -368,22 +368,22 @@ scrape_geekswhodrink_venue_quiz_results <- function(venue_id, max_page = NULL) {
     return(res)
   }
   
-  clean_geekswhodrink_quiz_results(res)
+  clean_quiz_results(res)
 }
 
-possibly_scrape_geekswhodrink_venue_quiz_results <- purrr::possibly(
-  scrape_geekswhodrink_venue_quiz_results,
+possibly_scrape_venue_quiz_results <- purrr::possibly(
+  scrape_venue_quiz_results,
   otherwise = data.frame(),
   quiet = TRUE
 )
 
-judiciously_scrape_geekswhodrink_venue_quiz_results <- function(
+judiciously_scrape_venue_quiz_results <- function(
     venue_id, 
     try_if_existing_has_zero_records = FALSE, 
     try_if_recently_scraped = FALSE,
     recent_scrape_window = lubridate::duration(1, unit = 'days')
 ) {
-  res_existing <- safely_read_geekswhodrink_venue_quiz_results(venue_id)
+  res_existing <- safely_read_venue_quiz_results(venue_id)
   
   existing_quiz_results <- res_existing$result
   max_page <- NULL
@@ -419,7 +419,7 @@ judiciously_scrape_geekswhodrink_venue_quiz_results <- function(
     isFALSE(try_if_existing_has_zero_records)
   ) {
     res <- data.frame()
-    write_geekswhodrink_quiz_results(
+    write_quiz_results(
       res,
       name = venue_id
     )
@@ -439,7 +439,7 @@ judiciously_scrape_geekswhodrink_venue_quiz_results <- function(
     }
   }
   
-  res <- possibly_scrape_geekswhodrink_venue_quiz_results(venue_id, max_page = max_page)
+  res <- possibly_scrape_venue_quiz_results(venue_id, max_page = max_page)
   n_new_records <- nrow(res)
   cli::cli_inform(c('i' = 'Got {n_new_records} new records for {.var venue_id} = {.val {venue_id}}.'))
   
@@ -447,7 +447,7 @@ judiciously_scrape_geekswhodrink_venue_quiz_results <- function(
     if (isFALSE(release_file_exists)) {
       cli::cli_inform(c('i' = 'Writing to release file even though no records exist since no release file existed before.'))
       
-      write_geekswhodrink_quiz_results(
+      write_quiz_results(
         res,
         name = venue_id
       )
@@ -478,7 +478,7 @@ judiciously_scrape_geekswhodrink_venue_quiz_results <- function(
     dplyr::slice_min(updated_at, n = 1, with_ties = TRUE) |> 
     dplyr::ungroup()
   
-  write_geekswhodrink_quiz_results(
+  write_quiz_results(
     res,
     name = venue_id
   )
@@ -486,7 +486,7 @@ judiciously_scrape_geekswhodrink_venue_quiz_results <- function(
 }
 
 
-judiciously_scrape_x_geekswhodrink_venue_quiz_results <- function(venue_ids, descriptor) {
+judiciously_scrape_x_venue_quiz_results <- function(venue_ids, descriptor) {
   n_venues <- length(venue_ids)
   msg <- glue::glue('Scraping quiz results for {n_venues} locations with "{descriptor}" data.')
   if (descriptor == 'stale') {
@@ -500,10 +500,10 @@ judiciously_scrape_x_geekswhodrink_venue_quiz_results <- function(venue_ids, des
       cli::cli_inform('Scraping {i}/{n_venues} {descriptor} venues.')
       if (difftime(Sys.time(), t1, units = 'mins') > MAX_SCRAPE_DURATION_MINUTES) {
         return(
-          possibly_read_geekswhodrink_venue_quiz_results(venue_id)
+          possibly_read_venue_quiz_results(venue_id)
         )
       }
-      res <- judiciously_scrape_geekswhodrink_venue_quiz_results(
+      res <- judiciously_scrape_venue_quiz_results(
         venue_id, 
         try_if_existing_has_zero_records = TRUE
       ) |> 
@@ -514,7 +514,7 @@ judiciously_scrape_x_geekswhodrink_venue_quiz_results <- function(venue_ids, des
     }
   )
   
-  write_geekswhodrink_release_csv(
+  write_release_csv(
     res,
     name = paste0('quiz-results-', descriptor),
     tag = 'data'
@@ -522,8 +522,8 @@ judiciously_scrape_x_geekswhodrink_venue_quiz_results <- function(venue_ids, des
   res
 }
 
-judiciously_scrape_stale_geekswhodrink_venue_quiz_results <- function() {
-  existing_results <- possibly_list_geekswhodrink_releases('venue-quiz-results')
+judiciously_scrape_stale_venue_quiz_results <- function() {
+  existing_results <- possibly_list_releases('venue-quiz-results')
   
   existing_results_needing_update <- dplyr::filter(
     existing_results,
@@ -532,20 +532,20 @@ judiciously_scrape_stale_geekswhodrink_venue_quiz_results <- function() {
   
   venue_ids <- existing_results_needing_update$venue_id
   
-  judiciously_scrape_x_geekswhodrink_venue_quiz_results(
+  judiciously_scrape_x_venue_quiz_results(
     venue_ids = venue_ids,
     descriptor = 'stale'
   )
 }
 
-judiciously_scrape_new_geekswhodrink_venue_quiz_results <- function() {
-  venues <- read_geekswhodrink_release_csv('venues')
+judiciously_scrape_new_venue_quiz_results <- function() {
+  venues <- read_release_csv('venues')
   
-  existing_results <- possibly_list_geekswhodrink_releases('venue-quiz-results')
+  existing_results <- possibly_list_releases('venue-quiz-results')
   
   venue_ids <- setdiff(venues$venue_id, existing_results$venue_id)
   
-  judiciously_scrape_x_geekswhodrink_venue_quiz_results(
+  judiciously_scrape_x_venue_quiz_results(
     venue_ids = venue_ids,
     descriptor = 'new'
   )
@@ -579,7 +579,7 @@ scrape_venue_info <- function(venue_id) {
 scrape_and_write_venue_info <- function(venue_id) {
   Sys.sleep(stats::runif(1, min = 1, max = 2))
   venue_info <- scrape_venue_info(venue_id)
-  write_geekswhodrink_release_json(
+  write_release_json(
     venue_info,
     name = as.character(venue_id),
     tag = 'venue-info'
@@ -589,16 +589,16 @@ scrape_and_write_venue_info <- function(venue_id) {
 
 ## Different strategy compared to quiz results:
 ## -  Check against stashed CSV and never re-scrape.
-judiciously_scrape_geekswhodrink_venue_info <- function() {
-  existing_quiz_result_releases <- possibly_list_geekswhodrink_releases('venue-quiz-results')
-  existing_venue_info_releases <- possibly_list_geekswhodrink_releases('venue-info')
+judiciously_scrape_venue_info <- function() {
+  existing_quiz_result_releases <- possibly_list_releases('venue-quiz-results')
+  existing_venue_info_releases <- possibly_list_releases('venue-info')
   
   new_venue_ids <- setdiff(
     existing_quiz_result_releases[['venue_id']],
     existing_venue_info_releases[['venue_id']]
   )
   
-  existing_venue_info <- possibly_read_geekswhodrink_release_csv(
+  existing_venue_info <- possibly_read_release_csv(
     name = 'venue-info',
     tag = 'data'
   )
@@ -615,7 +615,7 @@ judiciously_scrape_geekswhodrink_venue_info <- function() {
     \(venue_id, i) {
       cli::cli_inform('Scraping {i}/{n_venues} venues.')
       # res <- scrape_and_write_venue_info(venue_id)
-      res <- read_geekswhodrink_release_json(
+      res <- read_release_json(
         name = as.character(venue_id),
         tag = 'venue-info'
       )
@@ -630,7 +630,7 @@ judiciously_scrape_geekswhodrink_venue_info <- function() {
   ) |> 
     dplyr::relocate(venue_id, .before = 1)
   
-  write_geekswhodrink_release_csv(
+  write_release_csv(
     venue_info,
     name = 'venue-info',
     tag = 'data'
