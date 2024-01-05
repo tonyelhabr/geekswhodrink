@@ -1,4 +1,4 @@
-source(file.path('scripts', 'helpers'))
+source(file.path('scripts', 'helpers.R'))
 
 all_quiz_results <- read_release_csv(
   name = 'quiz-results',

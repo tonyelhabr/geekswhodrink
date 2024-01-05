@@ -11,12 +11,12 @@ suppressPackageStartupMessages(suppressWarnings({
 }))
 
 ## Data is considered "stale" / in need of update if it hasn't been updated for x days
-STALE_QUIZ_RESULTS_DURATION <- 6
+STALE_QUIZ_RESULTS_DURATION <- 7
 ## Choose a number that roughly corresponds to the number of months to do a "lookback" scrape for.
 ##   If the GitHub Action has been actively running, this should just be 1.
 MAX_PAGE <- 2
 TIMESTAMP <- lubridate::now()
-MAX_SCRAPE_DURATION_MINUTES <- 30 ## how long can one of the `judiciously_` functions run before we cut it off for GHA
+MAX_SCRAPE_DURATION_MINUTES <- 60 ## how long can one of the `judiciously_` functions run before we cut it off for GHA
 GITHUB_PAT <- Sys.getenv('GEEKS_WHO_DRINK_TOKEN')
 BASE_URL <- 'https://www.geekswhodrink.com/'
 REPO <- 'tonyelhabr/geekswhodrink'

@@ -10,7 +10,7 @@ This repo stores public [*Geeks Who Drink*](https://www.geekswhodrink.com/) quiz
 
 1. There are a set of R and python scripts in `scripts/` for data ingestion.
     - `scripts/src/`: Python modules for functions for python script.
-    - `scripts/helpers-geekswhodrink: R functions for R scripts.
+    - `scripts/helpers-geekswhodrink`: R functions for R scripts.
     - `scripts/[012]-*[.](R|py)`: Scraping and ingestion
 2. There is a [Quarto](https://quarto.org/) [dashboard](https://tonyelhabr.github.io/geekswhodrink/) defined at the top-level of this project.
     - `index.qmd`: Dashboard
@@ -40,8 +40,11 @@ Individual venue quiz results can be downloaded at `https://github.com/tonyelhab
 ### GitHub Actions
 
 | Action |
-| ------ |
-| [![Scrape Geeks Who Drink venues](https://github.com/tonyelhabr/geekswhodrink/actions/workflows/scrape-geekswhodrink-venues.yml/badge.svg)](https://github.com/tonyelhabr/geekswhodrink/actions/workflows/scrape-geekswhodrink-venues.yml) |
+| :------|
+| [![Scrape venues](https://github.com/tonyelhabr/geekswhodrink/actions/workflows/scrape-venues.yml/badge.svg)](https://github.com/tonyelhabr/geekswhodrink/actions/workflows/scrape-venues.yml) |
+| [![Scrape venue info](https://github.com/tonyelhabr/geekswhodrink/actions/workflows/scrape-venue-info.yml/badge.svg)](https://github.com/tonyelhabr/geekswhodrink/actions/workflows/scrape-venue-info.yml) |
+| [![Scrape quiz results](https://github.com/tonyelhabr/geekswhodrink/actions/workflows/scrape-quiz-results.yml/badge.svg)](https://github.com/tonyelhabr/geekswhodrink/actions/workflows/scrape-quiz-results.yml) |
+
 
 ### Dictionary
 
