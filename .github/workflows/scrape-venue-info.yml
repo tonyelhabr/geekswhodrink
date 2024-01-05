@@ -31,4 +31,4 @@ jobs:
           cache-version: 1
         
       - name: Scrape stale quize results
-        run: Rscript -e 'source(file.path("R", "1-scrape-new-quiz-results.R"), echo = FALSE)'
+        run: Rscript -e 'source(file.path("scripts", "1-scrape-new-quiz-results.R"), echo = FALSE)'

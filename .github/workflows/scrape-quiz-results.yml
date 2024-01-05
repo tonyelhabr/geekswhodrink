@@ -31,8 +31,8 @@ jobs:
           cache-version: 1
         
       - name: Scrape quiz results
-        run: Rscript -e 'source(file.path("R", "1-scrape-quiz-results.R"), echo = FALSE)'
+        run: Rscript -e 'source(file.path("scripts", "1-scrape-quiz-results.R"), echo = FALSE)'
 
       ## Only combine here since we run this script more often than the script for "new" venues
       - name: Create supplementary artifacts
-        run: Rscript -e 'source(file.path("R", "2-create-supplementary-artifacts.R"), echo = FALSE)'
+        run: Rscript -e 'source(file.path("scripts", "2-create-supplementary-artifacts.R"), echo = FALSE)'
