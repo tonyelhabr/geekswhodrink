@@ -453,9 +453,12 @@ judiciously_scrape_venue_quiz_results <- function(
       )
       return(res)
     } else {
-      ## Figure out what to return if a release exists and there were no new records.
+      ## Over-write release so that timestamp is recognized.
       if (isTRUE(has_existing_quiz_results)) {
-        ## if we had non-zero existing records
+        write_quiz_results(
+          existing_quiz_results,
+          name = venue_id
+        )
         return(existing_quiz_results)
       } else {
         cli::cli_inform(c('i' = 'Returning NULL for an unexpected reason. TODO: Look into this.'))
@@ -494,7 +497,7 @@ judiciously_scrape_x_venue_quiz_results <- function(venue_ids, descriptor) {
   }
   cli::cli_inform(msg)
   t1 <- Sys.time()
-  res <- purrr::imap_dfr(
+  purrr::imap_dfr(
     venue_ids,
     \(venue_id, i) {
       cli::cli_inform('Scraping {i}/{n_venues} {descriptor} venues.')
@@ -514,29 +517,58 @@ judiciously_scrape_x_venue_quiz_results <- function(venue_ids, descriptor) {
         )
     }
   )
-  
-  write_release_csv(
-    res,
-    name = paste0('quiz-results-', descriptor),
-    tag = 'data'
-  )
-  res
 }
 
 judiciously_scrape_stale_venue_quiz_results <- function() {
-  existing_results <- possibly_list_releases('venue-quiz-results')
+  existing_results_files <- possibly_list_releases('venue-quiz-results')
   
-  existing_results_needing_update <- dplyr::filter(
-    existing_results,
+  existing_results_files_needing_update <- dplyr::filter(
+    existing_results_files,
     timestamp < (lubridate::today() - lubridate::days(STALE_QUIZ_RESULTS_DURATION))
   )
   
-  venue_ids <- existing_results_needing_update$venue_id
+  stale_venue_ids <- existing_results_files_needing_update$venue_id
   
-  judiciously_scrape_x_venue_quiz_results(
-    venue_ids = venue_ids,
+  # cli::cli_inform('Reading in existing quiz results')
+  # venue_ids_not_needing_update <- setdiff(existing_results_files$venue_id, stale_venue_ids)
+  # existing_results <- purrr::imap_dfr(
+  #   venue_ids_not_needing_update,
+  #   \(venue_id, i) {
+  #     possibly_read_venue_quiz_results(venue_id)
+  #   }
+  # )
+  existing_results <- read_release_csv(
+    name = 'quiz-results',
+    tag = 'data'
+  )
+  
+  if (length(stale_venue_ids) == 0) {
+    ## update timestamp
+    write_release_csv(
+      existing_results,
+      name = 'quiz-results',
+      tag = 'data'
+    )
+    return(existing_results)
+  }
+  
+  refreshed_results <- judiciously_scrape_x_venue_quiz_results(
+    venue_ids = stale_venue_ids,
     descriptor = 'stale'
   )
+  
+  all_results <- dplyr::bind_rows(
+    existing_results,
+    refreshed_results
+  )
+  
+  write_release_csv(
+    all_results,
+    name = 'quiz-results',
+    tag = 'data'
+  )
+  
+  all_results
 }
 
 judiciously_scrape_new_venue_quiz_results <- function() {
@@ -608,7 +640,7 @@ judiciously_scrape_venue_info <- function() {
     cli::cli_inform('No new venue info to scrape')
     return(existing_venue_info)
   }
-
+  
   cli::cli_inform('Scraping venue info')
   n_venues <- length(new_venue_ids)
   new_venue_info <- purrr::imap_dfr(
