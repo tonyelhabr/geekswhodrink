@@ -1,24 +1,6 @@
 source(file.path('scripts', 'helpers'))
 
-existing_quiz_result_batches <- list_releases('data') |> 
-    dplyr::filter(grepl('quiz-results-', file_name)) |> 
-    dplyr::arrange(timestamp, file_name)
-
-venue_ids <- existing_releases$venue_id
-n_venues <- length(venue_ids)
-
-all_quiz_results <- purrr::map_dfr(
-  existing_quiz_result_batches$file_name,
-  \(.name) {
-    read_release_csv(
-      name = .name,
-      tag = 'data'
-    )
-  }
-)
-
-write_release_csv(
-  all_quiz_results,
+all_quiz_results <- read_release_csv(
   name = 'quiz-results',
   tag = 'data'
 )
@@ -43,6 +25,7 @@ austin_venues <- read_release_csv(
   name = 'venues', 
   tag = 'data'
 )
+
 all_quiz_results |> 
   dplyr::semi_join(
     austin_venues,
