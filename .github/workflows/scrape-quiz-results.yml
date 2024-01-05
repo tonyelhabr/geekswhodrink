@@ -1,4 +1,4 @@
-name: Scrape stale quiz results
+name: Scrape quiz results
 
 on:
   schedule:
@@ -30,9 +30,9 @@ jobs:
         with:
           cache-version: 1
         
-      - name: Scrape stale quize results
-        run: Rscript -e 'source(file.path("R", "1-scrape-stale-quiz-results.R"), echo = FALSE)'
+      - name: Scrape quiz results
+        run: Rscript -e 'source(file.path("R", "1-scrape-quiz-results.R"), echo = FALSE)'
 
       ## Only combine here since we run this script more often than the script for "new" venues
-      - name: Combine quiz results
-        run: Rscript -e 'source(file.path("R", "2-combine-quiz-results.R"), echo = FALSE)'
+      - name: Create supplementary artifacts
+        run: Rscript -e 'source(file.path("R", "2-create-supplementary-artifacts.R"), echo = FALSE)'
