@@ -197,12 +197,12 @@ convert_quiz_results_df_to_list <- function(df) {
 }
 
 
-write_quiz_results <- function(x, name, ...) {
+write_quiz_results <- function(x, venue_id, ...) {
   res <- convert_quiz_results_df_to_list(x)
   
   write_release_json(
     x = res,
-    name = as.character(name),
+    name = as.character(venue_id),
     tag = 'venue-quiz-results'
   )
 }
@@ -421,7 +421,7 @@ judiciously_scrape_venue_quiz_results <- function(
     res <- data.frame()
     write_quiz_results(
       res,
-      name = venue_id
+      venue_id
     )
     return(res)
   }
@@ -449,7 +449,7 @@ judiciously_scrape_venue_quiz_results <- function(
       
       write_quiz_results(
         res,
-        name = venue_id
+        venue_id
       )
       return(res)
     } else {
@@ -457,7 +457,7 @@ judiciously_scrape_venue_quiz_results <- function(
       if (isTRUE(has_existing_quiz_results)) {
         write_quiz_results(
           existing_quiz_results,
-          name = venue_id
+          venue_id
         )
         return(existing_quiz_results)
       } else {
@@ -483,7 +483,7 @@ judiciously_scrape_venue_quiz_results <- function(
   
   write_quiz_results(
     res,
-    name = venue_id
+    venue_id
   )
   invisible(res)
 }
@@ -530,13 +530,18 @@ judiciously_scrape_stale_venue_quiz_results <- function() {
   stale_venue_ids <- existing_results_files_needing_update$venue_id
   
   # cli::cli_inform('Reading in existing quiz results')
-  # venue_ids_not_needing_update <- setdiff(existing_results_files$venue_id, stale_venue_ids)
+  venue_ids_not_needing_update <- setdiff(existing_results_files$venue_id, stale_venue_ids)
   # existing_results <- purrr::imap_dfr(
   #   venue_ids_not_needing_update,
   #   \(venue_id, i) {
-  #     possibly_read_venue_quiz_results(venue_id)
+  #     cli::cli_inform('Reading {scales::ordinal(i)} venue of {length(venue_ids_not_needing_update)}.')
+  #     possibly_read_venue_quiz_results(venue_id) |> 
+  #       mutate(
+  #         venue_id = .env$venue_id
+  #       )
   #   }
   # )
+  
   existing_results <- read_release_csv(
     name = 'quiz-results',
     tag = 'data'
