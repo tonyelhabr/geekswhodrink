@@ -6,7 +6,7 @@ on:
 jobs:
   test:
     ## Don't use macOS? https://github.com/actions/runner-images/issues/602
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
     env:
       GITHUB_PAT: ${{ secrets.GEEKS_WHO_DRINK_TOKEN }}
     steps:
@@ -15,18 +15,14 @@ jobs:
         
       - name: Setup R 
         uses: r-lib/actions/setup-r@v2
-      
-      ## for curl and leaflet
-      ## TODO: Make a separate renv profile for the dashboard
-      - name: Install System Dependecies
-        run: |
-          sudo apt-get update
-          sudo apt-get install libcurl4-openssl-dev libudunits2-dev libgdal-dev libgeos-dev libproj-dev
-          
+        with:
+          r-version: '4.2.0'
+
       - name: Install R Dependencies
         uses: r-lib/actions/setup-renv@v2
         with:
           cache-version: 1
-        
+          profile: '"dev"'
+
       - name: Scrape quiz results
         run: Rscript -e 'source(file.path("scripts", "test.R"), echo = FALSE)'
