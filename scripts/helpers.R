@@ -17,7 +17,7 @@ STALE_QUIZ_RESULTS_DURATION <- 7
 MAX_PAGE <- 2
 TIMESTAMP <- lubridate::now()
 MAX_SCRAPE_DURATION_MINUTES <- 60 ## how long can one of the `judiciously_` functions run before we cut it off for GHA
-GITHUB_PAT <- Sys.getenv('GEEKS_WHO_DRINK_TOKEN')
+# GITHUB_PAT <- Sys.getenv('GEEKS_WHO_DRINK_TOKEN')
 BASE_URL <- 'https://www.geekswhodrink.com/'
 REPO <- 'tonyelhabr/geekswhodrink'
 
@@ -111,16 +111,12 @@ possibly_read_venue_quiz_results <- purrr::possibly(
 )
 
 write_release <- function(x, name, ext, f, tag = 'data') {
-  temp_dir <- tempdir(check = TRUE)
   basename <- sprintf('%s.%s', name, ext)
-  temp_path <- file.path(temp_dir, basename)
-  f(x, temp_path)
-  ## checking that the tag exists messes things up in the GHA?
-  ##   as a hack, we can call the underlying `pb_upload_file`
-  # piggyback::pb_upload(
-  piggyback:::pb_upload_file(
-    temp_path,
-    .token = GITHUB_PAT,
+  piggyback::pb_write(
+    x,
+    file = basename,
+    # .token = GITHUB_PAT,
+    write_function = f,
     repo = REPO,
     tag = tag
   )
@@ -212,9 +208,9 @@ write_venue_quiz_results <- function(x, venue_id, ...) {
 
 list_releases <- function(tag) {
   res <- piggyback::pb_list(
+    # .token = GITHUB_PAT,
     repo = REPO, 
-    tag = tag,
-    .token = GITHUB_PAT
+    tag = tag
   ) |> 
     dplyr::mutate(
       venue_id = as.numeric(tools::file_path_sans_ext(file_name)),
