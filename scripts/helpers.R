@@ -200,7 +200,7 @@ convert_quiz_results_df_to_list <- function(df) {
 }
 
 
-write_quiz_results <- function(x, venue_id, ...) {
+write_venue_quiz_results <- function(x, venue_id, ...) {
   res <- convert_quiz_results_df_to_list(x)
   
   write_release_json(
@@ -422,7 +422,7 @@ judiciously_scrape_venue_quiz_results <- function(
     isFALSE(try_if_existing_has_zero_records)
   ) {
     res <- data.frame()
-    write_quiz_results(
+    write_venue_quiz_results(
       res,
       venue_id
     )
@@ -450,7 +450,7 @@ judiciously_scrape_venue_quiz_results <- function(
     if (isFALSE(release_file_exists)) {
       cli::cli_inform(c('i' = 'Writing to release file even though no records exist since no release file existed before.'))
       
-      write_quiz_results(
+      write_venue_quiz_results(
         res,
         venue_id
       )
@@ -458,7 +458,7 @@ judiciously_scrape_venue_quiz_results <- function(
     } else {
       ## Over-write release so that timestamp is recognized.
       if (isTRUE(has_existing_quiz_results)) {
-        write_quiz_results(
+        write_venue_quiz_results(
           existing_quiz_results,
           venue_id
         )
@@ -484,7 +484,7 @@ judiciously_scrape_venue_quiz_results <- function(
     dplyr::slice_min(updated_at, n = 1, with_ties = TRUE) |> 
     dplyr::ungroup()
   
-  write_quiz_results(
+  write_venue_quiz_results(
     res,
     venue_id
   )
