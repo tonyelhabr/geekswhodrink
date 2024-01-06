@@ -115,7 +115,10 @@ write_release <- function(x, name, ext, f, tag = 'data') {
   basename <- sprintf('%s.%s', name, ext)
   temp_path <- file.path(temp_dir, basename)
   f(x, temp_path)
-  piggyback::pb_upload(
+  ## checking that the tag exists messes things up in the GHA?
+  ##   as a hack, we can call the underlying `pb_upload_file`
+  # piggyback::pb_upload(
+  piggyback:::pb_upload_file(
     temp_path,
     .token = GITHUB_PAT,
     repo = REPO,
