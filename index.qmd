@@ -47,13 +47,19 @@ raw_venues <- read_geekswhodrink_release_csv(
   tag = 'data'
 )
 
-## combine ----
+raw_quiz_results <- read_geekswhodrink_release_csv(
+  name = 'quiz-results',
+  tag = 'data'
+)
+
+## ingest ----
 convert_10_digit_zip_to_5_digit_zip <- function(x) {
   stringr::str_remove(x, '-[0-9]{4}$')
 }
 
+ADDRESS_SUFFIX_REGEX <- '\\,\\s([A-Z]{2})\\s([0-9]+$)'
 str_replace_address <- function(x, i) {
-  stringr::str_replace(x, paste0('(^.*)', '\\,\\s([A-Z]{2})\\s([0-9]+$)'), paste0('\\', i))
+  stringr::str_replace(x, paste0('(^.*)', ADDRESS_SUFFIX_REGEX), paste0('\\', i))
 }
 
 venue_info <- raw_venue_info |> 
@@ -77,6 +83,7 @@ venues <- raw_venues |>
   ) |> 
   dplyr::transmute(
     venue_id,
+    html_venue_id = sprintf("<a href='https://www.geekswhodrink.com/venues/%s' target='_blank'>%s</a>", venue_id, venue_id),
     name,
     html_name = sprintf(
       '%s%s%s', 
@@ -121,11 +128,18 @@ venues <- raw_venues |>
   ) |> 
   dplyr::arrange(state, name)
 
-# quiz_results <- read_geekswhodrink_release_csv(
-#   name = 'quiz-results',
-#   tag = 'data'
-# )
+latest_quiz_week <- max(raw_quiz_results$quiz_week)
+latest_quiz_results <- raw_quiz_results |> 
+  dplyr::slice_max(quiz_week, n = 1) |> 
+  dplyr::select(
+    venue_id,
+    team,
+    placing,
+    score
+  )
 ```
+
+# Venue Locations
 
 ## Column {width="60%"}
 
@@ -135,8 +149,8 @@ venues <- raw_venues |>
 #| padding: 0
 ## https://github.com/jjallaire/waste-sites-dashboard/blob/main/dashboard.qmd
 leaflet::leaflet() |> 
-  ##  CartoDB.Positron seems to be pretty popular among tutorials, but I personally like
-  ##  this one a bit more
+  ## CartoDB.Positron seems to be pretty popular among tutorials, but I personally like
+  ##   this one a bit more
   leaflet::addProviderTiles('CartoDB.Voyager') |> 
   ## US
   leaflet::fitBounds(
@@ -156,21 +170,12 @@ leaflet::leaflet() |>
     lng = venues$lon,
     lat = venues$lat,
     label = sprintf(
-      '<strong>%s%s%s</strong><br/>%s<br/>%s, %s',
-      ifelse(
-        !is.na(venues$venue_link),
-        sprintf("<a href='%s' target='_blank'>", venues$venue_link),
-        ''
-      ),
-      venues$name,
-      ifelse(
-        !is.na(venues$venue_link),
-        '</a>',
-        ''
-      ),
+      '<strong>%s</strong><br/><br/>%s<br/>%s, %s<br/><br/><i>Venue ID: %s</i>',
+      venues$html_name,
       venues$address_line_1,
       venues$state,
-      venues$zip
+      venues$zip,
+      venues$html_venue_id
     ) |>
       purrr::map(htmltools::HTML),
     labelOptions = leaflet::labelOptions(
@@ -204,7 +209,13 @@ venues |>
           venues$html_name[index]
         }),
       address_line_1 = reactable::colDef(name = 'Address'),
-      venue_id = reactable::colDef(name = 'Venue ID')
+      venue_id = reactable::colDef(
+        html = TRUE,
+        name = 'Venue ID',
+        cell = function(value, index) {
+          venues$html_venue_id[index]
+        }
+      )
     ),
     defaultPageSize = 10,
     sortable = TRUE,
@@ -213,4 +224,10 @@ venues |>
     defaultSortOrder = 'asc',
     pagination = TRUE
   )
+```
+
+# Venue Results
+
+```{r}
+
 ```
