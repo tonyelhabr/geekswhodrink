@@ -69,4 +69,4 @@ jobs:
           profile: '"dev"'
         
       - name: Scrape venue info
-        run: Rscript -e 'source(file.path("scripts", "1-scrape-venue-info.R"), echo = FALSE)'
+        run: Rscript -e 'source(file.path("scripts", "2-scrape-venue-info.R"), echo = FALSE)'
