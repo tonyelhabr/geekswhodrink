@@ -27,5 +27,5 @@ jobs:
           cache-version: 1
           profile: '"dev"'
 
-      - name: Scrape quiz results
+      - name: test
         run: Rscript -e 'source(file.path("scripts", "test.R"), echo = FALSE)'
