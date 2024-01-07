@@ -1,7 +1,12 @@
 {
   "bioconductor.version": null,
   "external.libraries": [],
-  "ignored.packages": [],
+  "ignored.packages": [
+    "htmltools",
+    "leaflet", 
+    "reactable", 
+    "rmarkdown"
+  ],
   "package.dependency.fields": [
     "Imports",
     "Depends",
