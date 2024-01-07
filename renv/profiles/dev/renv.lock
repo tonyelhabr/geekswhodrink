@@ -376,9 +376,14 @@
     },
     "piggyback": {
       "Package": "piggyback",
-      "Version": "0.1.4",
-      "Source": "Repository",
-      "Repository": "CRAN",
+      "Version": "0.1.5.9004",
+      "Source": "GitHub",
+      "RemoteType": "github",
+      "RemoteHost": "api.github.com",
+      "RemoteUsername": "ropensci",
+      "RemoteRepo": "piggyback",
+      "RemoteRef": "master",
+      "RemoteSha": "4589222b31387f258706e4896ae6a9a297b53b75",
       "Requirements": [
         "cli",
         "fs",
@@ -386,10 +391,10 @@
         "glue",
         "httr",
         "jsonlite",
-        "lubridate",
-        "memoise"
+        "memoise",
+        "rlang"
       ],
-      "Hash": "006bc382c1f4b40b30e19ce8503f0a91"
+      "Hash": "bf9b8e4f4e4c684d5486d73ade25d10f"
     },
     "pillar": {
       "Package": "pillar",
