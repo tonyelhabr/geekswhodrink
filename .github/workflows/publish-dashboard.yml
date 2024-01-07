@@ -1,7 +1,7 @@
 ## References:
 ## - https://github.com/othomantegazza/milano-air-quality/blob/main/.github/workflows/publish.yml
 ## - https://quarto.org/docs/publishing/github-pages.html
-name: Quarto Publish
+name: Publish dashboard
 
 on:
   schedule:
@@ -9,7 +9,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-deploy:
+  build-and-deploy:
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -17,7 +17,6 @@ jobs:
       id-token: write
     env:
       GITHUB_PAT: ${{ secrets.GEEKS_WHO_DRINK_TOKEN }}
-      RENV_PATHS_ROOT: ~/.local/share/renv
     steps:
       - name: Check out repository
         uses: actions/checkout@v4 
@@ -32,32 +31,17 @@ jobs:
         with:
           r-version: '4.2.0'
       
-      ## for curl and leaflet
+      ## for leaflet
       - name: Install System Dependecies
         run: |
           sudo apt-get update
-          sudo apt-get install libcurl4-openssl-dev libudunits2-dev libgdal-dev libgeos-dev libproj-dev 
+          sudo apt-get install libudunits2-dev libgdal-dev libgeos-dev libproj-dev 
       
-      ## basically what is in r-lib/actions/renv@v2, but it never works for some reason
-      - name: Get R and OS version
-        id: get-version
-        run: |
-          cat("os-version=", sessionInfo()$running, "\n", file = Sys.getenv("GITHUB_OUTPUT"), sep = "", append = TRUE)
-          cat("r-version=", R.Version()$version.string, "\n", file = Sys.getenv("GITHUB_OUTPUT"), sep = "", append = TRUE)
-        shell: Rscript {0}
-        
-      - name: Cache packages
-        uses: actions/cache@v3
+      - name: Install R Dependencies
+        uses: r-lib/actions/setup-renv@v2
         with:
-          path: ${{ env.RENV_PATHS_ROOT }}
-          key: ${{ steps.get-version.outputs.os-version }}-${{ steps.get-version.outputs.r-version }}-${{ hashFiles('**/renv.lock') }}
-          restore-keys: ${{ steps.get-version.outputs.os-version }}-${{ steps.get-version.outputs.r-version }}-
-            
-      - name: Restore packages
-        shell: Rscript {0}
-        run: |
-          if (!requireNamespace("renv", quietly = TRUE)) install.packages("renv")
-          renv::restore()
+          cache-version: 1
+          profile: '"dashboard"'
 
       - name: Render and publish 
         uses: quarto-dev/quarto-actions/publish@v2

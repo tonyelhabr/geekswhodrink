@@ -7,8 +7,7 @@ on:
 
 jobs:
   scrape-and-combine:
-    ## Don't use macOS? https://github.com/actions/runner-images/issues/602
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     env:
       GITHUB_PAT: ${{ secrets.GEEKS_WHO_DRINK_TOKEN }}
     steps:
