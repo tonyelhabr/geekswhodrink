@@ -9,7 +9,7 @@ on:
 jobs:
   test:
     ## Don't use macOS? https://github.com/actions/runner-images/issues/602
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     env:
       GITHUB_PAT: ${{ secrets.GEEKS_WHO_DRINK_TOKEN }}
     steps:
@@ -20,7 +20,14 @@ jobs:
         uses: r-lib/actions/setup-r@v2
         with:
           r-version: '4.2.0'
-
+          
+      ## for curl
+      ## TODO: Make a separate renv profile for the dashboard
+      - name: Install System Dependecies
+        run: |
+          sudo apt-get update
+          sudo apt-get install libcurl4-openssl-dev
+        
       - name: Install R Dependencies
         uses: r-lib/actions/setup-renv@v2
         with:
