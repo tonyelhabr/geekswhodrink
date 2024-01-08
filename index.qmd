@@ -22,13 +22,17 @@ library(htmltools)
 library(reactable)
 
 REPO <- 'tonyelhabr/geekswhodrink'
-read_geekswhodrink_release <- function(name, ext, f, tag = 'data') {
-  url <- sprintf('https://github.com/%s/releases/download/%s/%s.%s', REPO, tag, name, ext)
-  f(url)
+read_release <- function(name, ext, f, tag = 'data') {
+  piggyback::pb_read(
+    file = sprintf('%s.%s', name, ext),
+    repo = REPO,
+    tag = tag,
+    read_function = f
+  )
 }
 
-read_geekswhodrink_release_csv <- function(name, ...) {
-  read_geekswhodrink_release(
+read_release_csv <- function(name, ...) {
+  read_release(
     name = name,
     ext = 'csv',
     f = function(path) { readr::read_csv(path, show_col_types = FALSE) },
@@ -37,17 +41,17 @@ read_geekswhodrink_release_csv <- function(name, ...) {
 }
 
 ## pull ----
-raw_venue_info <- read_geekswhodrink_release_csv(
+raw_venue_info <- read_release_csv(
   name = 'venue-info',
   tag = 'data'
 )
 
-raw_venues <- read_geekswhodrink_release_csv(
+raw_venues <- read_release_csv(
   name = 'venues',
   tag = 'data'
 )
 
-raw_quiz_results <- read_geekswhodrink_release_csv(
+raw_quiz_results <- read_release_csv(
   name = 'quiz-results',
   tag = 'data'
 )
