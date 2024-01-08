@@ -751,9 +751,14 @@
     },
     "piggyback": {
       "Package": "piggyback",
-      "Version": "0.1.5",
-      "Source": "Repository",
-      "Repository": "CRAN",
+      "Version": "0.1.5.9004",
+      "Source": "GitHub",
+      "RemoteType": "github",
+      "RemoteHost": "api.github.com",
+      "RemoteUsername": "ropensci",
+      "RemoteRepo": "piggyback",
+      "RemoteRef": "master",
+      "RemoteSha": "4589222b31387f258706e4896ae6a9a297b53b75",
       "Requirements": [
         "cli",
         "fs",
@@ -761,10 +766,10 @@
         "glue",
         "httr",
         "jsonlite",
-        "lubridate",
-        "memoise"
+        "memoise",
+        "rlang"
       ],
-      "Hash": "8bb22d293b2f482257d396883cfb2821"
+      "Hash": "bf9b8e4f4e4c684d5486d73ade25d10f"
     },
     "pillar": {
       "Package": "pillar",
@@ -1093,17 +1098,6 @@
         "withr"
       ],
       "Hash": "79540e5fcd9e0435af547d885f184fd5"
-    },
-    "timechange": {
-      "Package": "timechange",
-      "Version": "0.2.0",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Requirements": [
-        "R",
-        "cpp11"
-      ],
-      "Hash": "8548b44f79a35ba1791308b61e6012d7"
     },
     "tinytex": {
       "Package": "tinytex",
