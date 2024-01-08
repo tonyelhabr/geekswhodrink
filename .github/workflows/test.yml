@@ -23,13 +23,13 @@ jobs:
           
       - name: Cache poetry install
         id: cache-poetry
-        uses: actions/cache@v4
+        uses: actions/cache@v3
         with:
           path: ~/.local
           key: poetry-1.5.0
       
       - name: Install and configure Poetry
-        uses: snok/instll-poetry@v1
+        uses: snok/install-poetry@v1
         with:
           version: 1.5.0
           virtualenvs-create: true
@@ -38,7 +38,7 @@ jobs:
           
       - name: Load cached venv
         id: cache-poetry-deps
-        uses: actions/cache@v4
+        uses: actions/cache@v3
         with:
           path: .venv
           key: venv-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('**/poetry.lock') }}
