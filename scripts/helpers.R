@@ -22,8 +22,12 @@ BASE_URL <- 'https://www.geekswhodrink.com/'
 REPO <- 'tonyelhabr/geekswhodrink'
 
 read_release <- function(name, ext, f, tag = 'data') {
-  url <- sprintf('https://github.com/%s/releases/download/%s/%s.%s', REPO, tag, name, ext)
-  f(url)
+  piggyback::pb_read(
+    file = sprintf('%s.%s', name, ext),
+    repo = REPO,
+    tag = tag,
+    read_function = f
+  )
 }
 
 read_release_csv <- function(name, ...) {
