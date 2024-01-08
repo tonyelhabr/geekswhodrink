@@ -1,7 +1,11 @@
 {
   "bioconductor.version": null,
   "external.libraries": [],
-  "ignored.packages": [],
+  "ignored.packages": [
+    "chromote",
+    "lubridate",
+    "rvest"
+  ],
   "package.dependency.fields": [
     "Imports",
     "Depends",
