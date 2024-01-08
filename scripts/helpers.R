@@ -656,6 +656,7 @@ judiciously_scrape_venue_info <- function() {
     name = 'venue-info',
     tag = 'data'
   )
+  existing_venue_info$updated_at <- lubridate::ymd_hms(existing_venue_info$updated_at)
   
   if (length(new_venue_ids) == 0) {
     cli::cli_inform('No new venue info to scrape.')
@@ -692,4 +693,5 @@ judiciously_scrape_venue_info <- function() {
     name = 'venue-info',
     tag = 'data'
   )
+  venue_info
 }
