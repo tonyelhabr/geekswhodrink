@@ -623,11 +623,23 @@ scrape_and_write_venue_info <- function(venue_id) {
   venue_info <- scrape_venue_info(venue_id)
   write_release_json(
     venue_info,
-    name = as.character(venue_id),
+    venue_id,
     tag = 'venue-info'
   )
   venue_info
 }
+
+read_venue_info <- function(venue_id) {
+  read_release_json(
+    venue_id,
+    tag = 'venue-info'
+  )
+}
+
+possibly_read_venue_info <- purrr::possibly(
+  read_venue_info,
+  .otherwise = NULL
+)
 
 ## Different strategy compared to quiz results:
 ## -  Check against stashed CSV and never re-scrape.
@@ -646,21 +658,24 @@ judiciously_scrape_venue_info <- function() {
   )
   
   if (length(new_venue_ids) == 0) {
-    cli::cli_inform('No new venue info to scrape')
+    cli::cli_inform('No new venue info to scrape.')
     return(existing_venue_info)
   }
   
-  cli::cli_inform('Scraping venue info')
+  cli::cli_inform('Scraping venue info.')
   n_venues <- length(new_venue_ids)
+  t1 <- Sys.time()
   new_venue_info <- purrr::imap_dfr(
     new_venue_ids,
     \(venue_id, i) {
       cli::cli_inform('Scraping {i}/{n_venues} venues.')
-      # res <- scrape_and_write_venue_info(venue_id)
-      res <- read_release_json(
-        name = as.character(venue_id),
-        tag = 'venue-info'
-      )
+      if (difftime(Sys.time(), t1, units = 'mins') > MAX_SCRAPE_DURATION_MINUTES) {
+        cli::cli_inform('Skipping {venue_id} early because this function has been running for over {MAX_SCRAPE_DURATION_MINUTES} minutes.')
+        return(
+          possibly_read_venue_info(venue_id)
+        )
+      }
+      res <- scrape_and_write_venue_info(venue_id)
       res[['venue_id']] <- venue_id
       res
     }
