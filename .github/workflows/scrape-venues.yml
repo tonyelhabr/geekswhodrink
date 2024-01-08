@@ -12,20 +12,23 @@ jobs:
     env:
       GEEKS_WHO_DRINK_TOKEN: ${{ secrets.GEEKS_WHO_DRINK_TOKEN }}
     steps:
-      - name: Check out repository
-        uses: actions/checkout@v3
-        
-      # - name: Remove previous chrome instances on runner 
-      #   run: sudo apt purge google-chrome-stable
-        
+      - uses: actions/checkout@v4
+
       ## https://github.com/marketplace/actions/install-poetry-action
+      ## https://jacobian.org/til/github-actions-poetry/
       - name: Set up python
         id: setup-python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.9'
-          cache: 'pip'
+          python-version: 3.9
           
+      - name: Cache poetry install
+        id: cache-poetry
+        uses: actions/cache@v3
+        with:
+          path: ~/.local
+          key: poetry-1.5.0
+      
       - name: Install and configure Poetry
         uses: snok/install-poetry@v1
         with:
@@ -35,38 +38,20 @@ jobs:
           installer-parallel: true
           
       - name: Load cached venv
-        id: cached-poetry-dependencies
+        id: cache-poetry-deps
         uses: actions/cache@v3
         with:
           path: .venv
           key: venv-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('**/poetry.lock') }}
       
       - name: Install dependencies
-        if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
+        if: steps.cache-poetry-deps.outputs.cache-hit != 'true'
         run: poetry install --no-interaction --no-root
         
       - name: Install project
         run: poetry install --no-interaction
         
-      - name: Scrape venues
-        run: python scripts/0-scrape-venues.py
-        
-  scrape-venue-info:
-    runs-on: ubuntu-latest
-    env:
-      GITHUB_PAT: ${{ secrets.GEEKS_WHO_DRINK_TOKEN }}
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-        
-      - name: Setup R 
-        uses: r-lib/actions/setup-r@v2
+      - name: Run script
+        run: |
+          poetry run python scripts/0-scrape-venues.py
 
-      - name: Install R Dependencies
-        uses: r-lib/actions/setup-renv@v2
-        with:
-          cache-version: 1
-          profile: '"dev"'
-        
-      - name: Scrape venue info
-        run: Rscript -e 'source(file.path("scripts", "2-scrape-venue-info.R"), echo = FALSE)'

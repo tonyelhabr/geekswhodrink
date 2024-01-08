@@ -34,3 +34,7 @@ jobs:
 
       - name: Scrape venue info
         run: Rscript -e 'source(file.path("scripts", "2-scrape-venue-info.R"), echo = FALSE)'
+      
+      ## Run this after quiz results script since it depends on quiz-venues.csv
+      - name: Scrape venue info
+        run: Rscript -e 'source(file.path("scripts", "2-scrape-venue-info.R"), echo = FALSE)'
