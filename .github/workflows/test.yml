@@ -50,9 +50,6 @@ jobs:
       - name: Install project
         run: poetry install --no-interaction
         
-      - name: Set permissions
-        run: chmod +rx scripts/0-scrape-venues.py
-        
       - name: Run script
         run: |
           poetry run python scripts/0-scrape-venues.py

@@ -84,5 +84,6 @@ def process_and_save_geekswhodrink_venues(location: str, file_name: str):
 
 # %%
 process_and_save_geekswhodrink_venues(location="", file_name="venues.csv")
-process_and_save_geekswhodrink_venues(location="Austin", file_name="austin-venues.csv")
 
+
+# %%
