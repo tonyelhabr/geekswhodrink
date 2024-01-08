@@ -8,6 +8,7 @@ suppressPackageStartupMessages(suppressWarnings({
   library(lubridate)
   library(piggyback)
   library(jsonlite)
+  library(tibble)
 }))
 
 ## Data is considered "stale" / in need of update if it hasn't been updated for x days
@@ -41,7 +42,7 @@ read_release_csv <- function(name, ...) {
 
 possibly_read_release_csv <- purrr::possibly(
   read_release_csv,
-  otherwise = data.frame(),
+  otherwise = tibble::tibble(),
   quiet = FALSE
 )
 
@@ -638,7 +639,7 @@ read_venue_info <- function(venue_id) {
 
 possibly_read_venue_info <- purrr::possibly(
   read_venue_info,
-  .otherwise = NULL
+  otherwise = tibble::tibble()
 )
 
 ## Different strategy compared to quiz results:
