@@ -131,6 +131,16 @@ venues <- raw_venues |>
     lon
   ) |> 
   dplyr::arrange(state, name)
+venues$label <- sprintf(
+  '<strong>%s</strong><br/><br/>%s<br/>%s, %s<br/><br/><i>Venue ID: %s</i>',
+  venues$html_name,
+  venues$address_line_1,
+  venues$state,
+  venues$zip,
+  venues$html_venue_id
+) |>
+  purrr::map(htmltools::HTML)
+
 
 latest_quiz_week <- max(raw_quiz_results$quiz_week)
 latest_quiz_results <- raw_quiz_results |> 
@@ -173,15 +183,8 @@ leaflet::leaflet() |>
   leaflet::addMarkers(
     lng = venues$lon,
     lat = venues$lat,
-    label = sprintf(
-      '<strong>%s</strong><br/><br/>%s<br/>%s, %s<br/><br/><i>Venue ID: %s</i>',
-      venues$html_name,
-      venues$address_line_1,
-      venues$state,
-      venues$zip,
-      venues$html_venue_id
-    ) |>
-      purrr::map(htmltools::HTML),
+    label = venues$name,
+    popup = venues$label,
     labelOptions = leaflet::labelOptions(
       style = list('font-weight' = 'normal'),
       direction = 'auto'
