@@ -1,5 +1,6 @@
 source(file.path('scripts', 'helpers.R'))
 
+cli::cli_inform('Pulling in all quiz results (from CSV).')
 all_quiz_results <- read_release_csv(
   name = 'quiz-results',
   tag = 'data'
@@ -15,23 +16,9 @@ nested_all_quiz_results <- purrr::map(
   }
 )
 
+cli::cli_inform('Writing all quiz results as JSON.')
 write_release_json(
   nested_all_quiz_results,
   name = 'quiz-results',
   tag = 'data'
 )
-
-austin_venues <- read_release_csv(
-  name = 'venues', 
-  tag = 'data'
-)
-
-all_quiz_results |> 
-  dplyr::semi_join(
-    austin_venues,
-    by = dplyr::join_by(venue_id)
-  ) |> 
-  write_release_csv(
-    name = 'austin-quiz-results',
-    tag = 'data'
-  )

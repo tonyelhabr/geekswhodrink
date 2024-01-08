@@ -42,7 +42,6 @@ Individual venue quiz results can be downloaded at `https://github.com/tonyelhab
 | Action |
 | :------|
 | [![Scrape venues](https://github.com/tonyelhabr/geekswhodrink/actions/workflows/scrape-venues.yml/badge.svg)](https://github.com/tonyelhabr/geekswhodrink/actions/workflows/scrape-venues.yml) |
-| [![Scrape venue info](https://github.com/tonyelhabr/geekswhodrink/actions/workflows/scrape-venue-info.yml/badge.svg)](https://github.com/tonyelhabr/geekswhodrink/actions/workflows/scrape-venue-info.yml) |
 | [![Scrape quiz results](https://github.com/tonyelhabr/geekswhodrink/actions/workflows/scrape-quiz-results.yml/badge.svg)](https://github.com/tonyelhabr/geekswhodrink/actions/workflows/scrape-quiz-results.yml) |
 
 

@@ -548,6 +548,7 @@ judiciously_scrape_stale_venue_quiz_results <- function() {
   
   if (length(stale_venue_ids) == 0) {
     ## update timestamp
+    cli::cli_inform('No "stale" results to refresh. Re-writing existing data to {.var data/quiz-results}.')
     write_release_csv(
       existing_results,
       name = 'quiz-results',
