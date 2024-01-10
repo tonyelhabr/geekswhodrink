@@ -19,7 +19,7 @@ load_dotenv()
 # %%
 chromedriver_autoinstaller.install()
 chrome_options = webdriver.ChromeOptions()
-options = []
+options = ["--headless"]
 
 for option in options:
     chrome_options.add_argument(option)
