@@ -1,3 +1,5 @@
 source(file.path('scripts', 'helpers.R'))
+venues <- read_release_csv('venues')
+stopifnot('No data in venues file!' = nrow(venues) > 0)
 judiciously_scrape_new_venue_quiz_results()
 judiciously_scrape_stale_venue_quiz_results()
