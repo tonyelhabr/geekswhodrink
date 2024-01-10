@@ -55,11 +55,14 @@ def scrape_geekswhodrink_venues_given_location(
         popup_button.click()
     except NoSuchElementException:
         print("Popup button not found.")
+        
+    print("bar")
     soup = BeautifulSoup(driver.page_source, "html.parser")
     results = soup.find_all("div", class_="find__col find__col--list")
 
     data = []
     for result in results:
+        print("foo")
         quiz_blocks = result.find_all("a", class_="quizBlock-returned")
         for quiz_block in quiz_blocks:
             data.append(
@@ -82,6 +85,7 @@ def process_and_save_geekswhodrink_venues(
     driver = webdriver.Chrome(options=chrome_options)
     venues = scrape_geekswhodrink_venues_given_location(driver, location)
     current_time = datetime.now()
+    print(venues.shape)
     venues["updated_at"] = current_time.strftime("%Y-%m-%d %H:%M:%S")
     create_or_update_geekswhodrink_release(df=venues, file_name=file_name)
     driver.quit()
