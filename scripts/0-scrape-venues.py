@@ -51,6 +51,7 @@ def scrape_geekswhodrink_venues_given_location(
                 )
             )
         )
+        print('popup button found')
         # Close the popup by clicking the button
         popup_button.click()
     except NoSuchElementException:
@@ -58,11 +59,11 @@ def scrape_geekswhodrink_venues_given_location(
         
     print("bar")
     soup = BeautifulSoup(driver.page_source, "html.parser")
+    print(str(soup)[:200])
     results = soup.find_all("div", class_="find__col find__col--list")
-
+    print(str(results[0])[:200)
     data = []
     for result in results:
-        print("foo")
         quiz_blocks = result.find_all("a", class_="quizBlock-returned")
         print(len(quiz_blocks))
         for i, quiz_block in enumerate(quiz_blocks):
