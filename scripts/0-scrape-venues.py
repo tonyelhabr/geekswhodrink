@@ -44,7 +44,12 @@ def scrape_geekswhodrink_venues_given_location(
     try:
         # Look for the popup button by its class and type attributes
         popup_button = WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located((By.XPATH, '//button[@class="pum-close popmake-close" and @type="button"]'))
+            EC.presence_of_element_located(
+                (
+                    By.XPATH,
+                    '//button[@class="pum-close popmake-close" and @type="button"]',
+                )
+            )
         )
         # Close the popup by clicking the button
         popup_button.click()
@@ -55,9 +60,7 @@ def scrape_geekswhodrink_venues_given_location(
 
     data = []
     for result in results:
-        quiz_blocks = result.find_all(
-            "a", class_="quizBlock-returned"
-        )
+        quiz_blocks = result.find_all("a", class_="quizBlock-returned")
         for quiz_block in quiz_blocks:
             data.append(
                 {
@@ -73,17 +76,20 @@ def scrape_geekswhodrink_venues_given_location(
     return pd.DataFrame(data)
 
 
-def process_and_save_geekswhodrink_venues(location: str, file_name: str):
+def process_and_save_geekswhodrink_venues(
+    location: str, file_name: str
+) -> pd.DataFrame:
     driver = webdriver.Chrome(options=chrome_options)
     venues = scrape_geekswhodrink_venues_given_location(driver, location)
     current_time = datetime.now()
     venues["updated_at"] = current_time.strftime("%Y-%m-%d %H:%M:%S")
     create_or_update_geekswhodrink_release(df=venues, file_name=file_name)
     driver.quit()
+    return venues
 
 
 # %%
-process_and_save_geekswhodrink_venues(location="", file_name="venues.csv")
-
+venues = process_and_save_geekswhodrink_venues(location="", file_name="venues.csv")
+print(venues.shape)
 
 # %%
