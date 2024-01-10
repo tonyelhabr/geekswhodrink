@@ -61,7 +61,7 @@ def scrape_geekswhodrink_venues_given_location(
     soup = BeautifulSoup(driver.page_source, "html.parser")
     print(str(soup)[:200])
     results = soup.find_all("div", class_="find__col find__col--list")
-    print(str(results[0])[:200)
+    print(str(results[0])[:200])
     data = []
     for result in results:
         quiz_blocks = result.find_all("a", class_="quizBlock-returned")
