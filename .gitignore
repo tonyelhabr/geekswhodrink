@@ -2,11 +2,9 @@
 /.quarto/
 docs/
 
-## poetry
 .venv/
 .env
 
-## pip
-venv/
-
 **/__pycache__/**
+
+**/profile

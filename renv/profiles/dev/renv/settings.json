@@ -5,7 +5,8 @@
     "htmltools",
     "leaflet", 
     "reactable", 
-    "rmarkdown"
+    "rmarkdown",
+    "yaml"
   ],
   "package.dependency.fields": [
     "Imports",

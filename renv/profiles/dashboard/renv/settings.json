@@ -4,7 +4,8 @@
   "ignored.packages": [
     "chromote",
     "lubridate",
-    "rvest"
+    "rvest",
+    "yaml"
   ],
   "package.dependency.fields": [
     "Imports",
