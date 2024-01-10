@@ -64,7 +64,9 @@ def scrape_geekswhodrink_venues_given_location(
     for result in results:
         print("foo")
         quiz_blocks = result.find_all("a", class_="quizBlock-returned")
-        for quiz_block in quiz_blocks:
+        print(len(quiz_blocks))
+        for i, quiz_block in enumerate(quiz_blocks):
+            print(i)
             data.append(
                 {
                     "venue_id": quiz_block["data-podio"],
