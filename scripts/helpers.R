@@ -271,7 +271,7 @@ scrape_tables_from_venue_page <- function(venue_id, page, session = NULL) {
   n_tbs <- length(tbs)
   if (n_tbs == 0) {
     session$session$close()
-    cli::cli_abort('No tables found for {.var venue_id} = {.val {venue_id}} on {.var page} = {.val {page}}.')
+    cli::cli_warn('No tables found for {.var venue_id} = {.val {venue_id}} on {.var page} = {.val {page}}.')
   }
   
   if (n_tbs != n_quiz_dates) {
@@ -295,7 +295,7 @@ quietly_scrape_tables_from_venue_page <- purrr::quietly(
 safely_quietly_scrape_tables_from_venue_page <- purrr::safely(
   quietly_scrape_tables_from_venue_page,
   otherwise = data.frame(),
-  quiet = FALSE
+  quiet = TRUE
 )
 
 clean_quiz_results <- function(df) {
@@ -642,6 +642,16 @@ possibly_read_venue_info <- purrr::possibly(
   otherwise = tibble::tibble()
 )
 
+retrive_remaining_requests <- function() {
+  url <- "https://api.github.com/rate_limit"
+  
+  # Make the API request using your credentials
+  response <- GET(url, add_headers(Authorization = paste("token", TOKEN)))
+  rate_limit_info <- content(response)
+  
+  rate_limit_info$resources$core$remaining
+}
+
 ## Different strategy compared to quiz results:
 ## -  Check against stashed CSV and never re-scrape.
 judiciously_scrape_venue_info <- function() {
@@ -671,7 +681,19 @@ judiciously_scrape_venue_info <- function() {
     new_venue_ids,
     \(venue_id, i) {
       cli::cli_inform('Scraping {i}/{n_venues} venues.')
-      if (difftime(Sys.time(), t1, units = 'mins') > MAX_SCRAPE_DURATION_MINUTES) {
+      is_nth_interval_to_check_for_limit <- i %% 10 == 0
+      if (isTRUE(is_nth_interval_to_check_for_limit)) {
+        remaining_requests <- retrive_remaining_requests()
+        if (remaining_requests < 100L) {
+          cli::cli_inform('Skipping {venue_id} early because we are nearing the GitHub API request limit.')
+          return(
+            possibly_read_venue_info(venue_id)
+          )
+        }
+      }
+      
+      has_been_running_too_long <- difftime(Sys.time(), t1, units = 'mins') > MAX_SCRAPE_DURATION_MINUTES
+      if (isTRUE(has_been_running_too_long)) {
         cli::cli_inform('Skipping {venue_id} early because this function has been running for over {MAX_SCRAPE_DURATION_MINUTES} minutes.')
         return(
           possibly_read_venue_info(venue_id)
