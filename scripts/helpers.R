@@ -9,6 +9,7 @@ suppressPackageStartupMessages(suppressWarnings({
   library(piggyback)
   library(jsonlite)
   library(tibble)
+  library(httr)
 }))
 
 ## Data is considered "stale" / in need of update if it hasn't been updated for x days
@@ -18,7 +19,7 @@ STALE_QUIZ_RESULTS_DURATION <- 7
 MAX_PAGE <- 2
 TIMESTAMP <- lubridate::now()
 MAX_SCRAPE_DURATION_MINUTES <- 60 ## how long can one of the `judiciously_` functions run before we cut it off for GHA
-# GITHUB_PAT <- Sys.getenv('GEEKS_WHO_DRINK_TOKEN')
+GITHUB_PAT <- Sys.getenv('GEEKS_WHO_DRINK_TOKEN')
 BASE_URL <- 'https://www.geekswhodrink.com/'
 REPO <- 'tonyelhabr/geekswhodrink'
 
@@ -643,11 +644,10 @@ possibly_read_venue_info <- purrr::possibly(
 )
 
 retrive_remaining_requests <- function() {
-  url <- "https://api.github.com/rate_limit"
+  url <- 'https://api.github.com/rate_limit'
   
-  # Make the API request using your credentials
-  response <- GET(url, add_headers(Authorization = paste("token", TOKEN)))
-  rate_limit_info <- content(response)
+  response <- httr::GET(url, httr::add_headers(Authorization = paste('token', GITHUB_PAT)))
+  rate_limit_info <- httr::content(response)
   
   rate_limit_info$resources$core$remaining
 }
