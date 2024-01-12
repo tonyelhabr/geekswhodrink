@@ -16,7 +16,7 @@ jobs:
       pages: write
       id-token: write
     env:
-      GITHUB_PAT: ${{ secrets.GEEKS_WHO_DRINK_TOKEN }}
+      GEEKS_WHO_DRINK_TOKEN: ${{ secrets.GEEKS_WHO_DRINK_TOKEN }}
     steps:
       - name: Check out repository
         uses: actions/checkout@v4 

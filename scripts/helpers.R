@@ -28,7 +28,8 @@ read_release <- function(name, ext, f, tag = 'data') {
     file = sprintf('%s.%s', name, ext),
     repo = REPO,
     tag = tag,
-    read_function = f
+    read_function = f,
+    .token = GITHUB_PAT
   )
 }
 
@@ -124,7 +125,8 @@ write_release <- function(x, name, ext, f, tag = 'data') {
     # .token = GITHUB_PAT,
     write_function = f,
     repo = REPO,
-    tag = tag
+    tag = tag,
+    .token = GITHUB_PAT
   )
 }
 
@@ -214,9 +216,9 @@ write_venue_quiz_results <- function(x, venue_id, ...) {
 
 list_releases <- function(tag) {
   res <- piggyback::pb_list(
-    # .token = GITHUB_PAT,
     repo = REPO, 
-    tag = tag
+    tag = tag,
+    .token = GITHUB_PAT
   ) |> 
     dplyr::mutate(
       venue_id = as.numeric(tools::file_path_sans_ext(file_name)),

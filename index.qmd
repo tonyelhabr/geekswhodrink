@@ -22,12 +22,14 @@ library(htmltools)
 library(reactable)
 
 REPO <- 'tonyelhabr/geekswhodrink'
+GITHUB_PAT <- Sys.getenv('GEEKS_WHO_DRINK_TOKEN')
 read_release <- function(name, ext, f, tag = 'data') {
   piggyback::pb_read(
     file = sprintf('%s.%s', name, ext),
     repo = REPO,
     tag = tag,
-    read_function = f
+    read_function = f,
+    .token = GITHUB_PAT
   )
 }
 
