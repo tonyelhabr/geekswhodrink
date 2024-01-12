@@ -1,12 +1,12 @@
-name: Scrape quiz results
+name: Update artifacts
 
 on:
   schedule:
-    - cron: '0 2,8,14,20 * * *'
+    - cron: '0 12 * * *'
   workflow_dispatch:
 
 jobs:
-  scrape-and-combine:
+  update-artifacts:
     runs-on: ubuntu-latest
     env:
       GEEKS_WHO_DRINK_TOKEN: ${{ secrets.GEEKS_WHO_DRINK_TOKEN }}
@@ -25,9 +25,8 @@ jobs:
           cache-version: 1
           profile: '"dev"'
 
-      - name: Scrape quiz results
-        run: Rscript -e 'source(file.path("scripts", "1-scrape-quiz-results.R"), echo = FALSE)'
+      - name: Create supplementary artifacts
+        run: Rscript -e 'source(file.path("scripts", "2-create-supplementary-artifacts.R"), echo = FALSE)'
 
-      ## Run this after quiz results script since it depends on quiz-venues.csv
-      - name: Scrape venue info
-        run: Rscript -e 'source(file.path("scripts", "2-scrape-venue-info.R"), echo = FALSE)'
+      - name: Scrape quiz results
+        run: Rscript -e 'source(file.path("scripts", "3-generate-dashboard-artifacts.R"), echo = FALSE)'
