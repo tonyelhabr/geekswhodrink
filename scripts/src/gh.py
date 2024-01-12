@@ -14,7 +14,7 @@ def create_or_update_release(
     env_var_name: str = "GITHUB_ACCESS_TOKEN",
     tag: str = "v1.0.0",
     description: str = "Description of release",
-):
+) -> bool:
     """
     Function to upload a dataframe to a GitHub release. Checks for an existing file and combines the new dataframe with the existing, running a deduplication procedure specified by the user.
 
@@ -40,7 +40,7 @@ def create_or_update_release(
             print(f"New release created: {release.tag_name}")
         except GithubException as e:
             print(f"Error creating release: {e}")
-            return
+            return False
     else:
         try:
             existing_data_file = None
@@ -67,12 +67,14 @@ def create_or_update_release(
 
         except GithubException as e:
             print(f"Error updating release: {e}")
-            return
+            return False
 
     try:
         asset = release.upload_asset_from_memory(
             file_like=file_content, file_size=len(file_content), name=file_name
         )
         print(f"File uploaded: {asset.name}")
+        return True
     except GithubException as e:
         print(f"Error uploading file: {e}")
+        return False
