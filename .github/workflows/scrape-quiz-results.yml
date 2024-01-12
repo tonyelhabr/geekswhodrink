@@ -9,7 +9,7 @@ jobs:
   scrape-and-combine:
     runs-on: ubuntu-latest
     env:
-      GITHUB_PAT: ${{ secrets.GEEKS_WHO_DRINK_TOKEN }}
+      GEEKS_WHO_DRINK_TOKEN: ${{ secrets.GEEKS_WHO_DRINK_TOKEN }}
     steps:
       - name: Checkout
         uses: actions/checkout@v2
