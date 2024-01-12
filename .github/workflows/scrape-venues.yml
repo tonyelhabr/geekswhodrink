@@ -11,6 +11,10 @@ jobs:
     runs-on: ubuntu-latest
     env:
       GEEKS_WHO_DRINK_TOKEN: ${{ secrets.GEEKS_WHO_DRINK_TOKEN }}
+      ## Looks like there might be some issue internally with piggyback with not using
+      ##   the explicitly passed token. So define a `GITHUB_PAT` so that piggyback uses
+      ##   that in the case where it doesn't pass in an explicit token
+      GITHUB_PAT: ${{ secrets.GEEKS_WHO_DRINK_TOKEN }}
     steps:
       - uses: actions/checkout@v4
 
