@@ -506,8 +506,21 @@ judiciously_scrape_x_venue_quiz_results <- function(venue_ids, descriptor) {
     venue_ids,
     \(venue_id, i) {
       cli::cli_inform('Scraping {i}/{n_venues} {descriptor} venues.')
-      if (difftime(Sys.time(), t1, units = 'mins') > MAX_SCRAPE_DURATION_MINUTES) {
-        cli::cli_inform('Skipping {venue_id} early because this function has been running for over {MAX_SCRAPE_DURATION_MINUTES} minutes.')
+      is_nth_interval_to_check_for_limit <- i %% 10 == 0
+      if (isTRUE(is_nth_interval_to_check_for_limit)) {
+        remaining_requests <- retrive_remaining_requests()
+        print(remaining_requests)
+        if (remaining_requests < 100L) {
+          cli::cli_inform('Skipping {venue_id} early because we are nearing the GitHub API request limit.')
+          return(
+            possibly_read_venue_info(venue_id)
+          )
+        }
+      }
+      
+      has_been_running_too_long <- difftime(Sys.time(), t1, units = 'mins') > MAX_SCRAPE_DURATION_MINUTES
+      if (isTRUE(has_been_running_too_long)) {
+        cli::cli_inform('Skipping {venue_id} early. Function has been running for over {MAX_SCRAPE_DURATION_MINUTES} minutes.')
         return(
           possibly_read_venue_quiz_results(venue_id)
         )
@@ -694,7 +707,7 @@ judiciously_scrape_venue_info <- function() {
       
       has_been_running_too_long <- difftime(Sys.time(), t1, units = 'mins') > MAX_SCRAPE_DURATION_MINUTES
       if (isTRUE(has_been_running_too_long)) {
-        cli::cli_inform('Skipping {venue_id} early because this function has been running for over {MAX_SCRAPE_DURATION_MINUTES} minutes.')
+        cli::cli_inform('Skipping {venue_id} early. Function has been running for over {MAX_SCRAPE_DURATION_MINUTES} minutes.')
         return(
           possibly_read_venue_info(venue_id)
         )
