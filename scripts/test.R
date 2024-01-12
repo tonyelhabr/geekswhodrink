@@ -1,20 +1,8 @@
-source(file.path('scripts', 'helpers.R'))
-all_quiz_results <- read_release_csv(
-  name = 'quiz-results',
-  tag = 'data'
-)
-nested_all_quiz_results <- purrr::map(
-  split(
-    all_quiz_results, 
-    all_quiz_results$venue_id
-  ),
-  \(by_venue) {
-    convert_quiz_results_df_to_list(by_venue)
-  }
-)
+url <- 'https://api.github.com/rate_limit'
 
-write_release_json(
-  nested_all_quiz_results,
-  name = 'quiz-results',
-  tag = 'data'
-)
+GITHUB_PAT <- Sys.getenv('GEEKS_WHO_DRINK_TOKEN')
+response <- httr::GET(url, httr::add_headers(Authorization = paste('token', GITHUB_PAT)))
+print(response)
+rate_limit_info <- httr::content(response)
+print(rate_limit_info)
+print(rate_limit_info$resources$core$remaining)
