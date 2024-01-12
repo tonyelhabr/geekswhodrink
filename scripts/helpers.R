@@ -508,7 +508,7 @@ judiciously_scrape_x_venue_quiz_results <- function(venue_ids, descriptor) {
       cli::cli_inform('Scraping {i}/{n_venues} {descriptor} venues.')
       is_nth_interval_to_check_for_limit <- i %% 10 == 0
       if (isTRUE(is_nth_interval_to_check_for_limit)) {
-        remaining_requests <- retrive_remaining_requests()
+        remaining_requests <- retrieve_remaining_requests()
         print(remaining_requests)
         if (remaining_requests < 100L) {
           cli::cli_inform('Skipping {venue_id} early because we are nearing the GitHub API request limit.')
@@ -656,7 +656,7 @@ possibly_read_venue_info <- purrr::possibly(
   otherwise = tibble::tibble()
 )
 
-retrive_remaining_requests <- function() {
+retrieve_remaining_requests <- function() {
   url <- 'https://api.github.com/rate_limit'
   
   response <- httr::GET(url, httr::add_headers(Authorization = paste('token', GITHUB_PAT)))
@@ -696,7 +696,7 @@ judiciously_scrape_venue_info <- function() {
       cli::cli_inform('Scraping {i}/{n_venues} venues.')
       is_nth_interval_to_check_for_limit <- i %% 10 == 0
       if (isTRUE(is_nth_interval_to_check_for_limit)) {
-        remaining_requests <- retrive_remaining_requests()
+        remaining_requests <- retrieve_remaining_requests()
         if (remaining_requests < 100L) {
           cli::cli_inform('Skipping {venue_id} early because we are nearing the GitHub API request limit.')
           return(
