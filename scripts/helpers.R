@@ -647,10 +647,18 @@ scrape_and_write_venue_info <- function(venue_id) {
 }
 
 read_venue_info <- function(venue_id) {
-  read_release_json(
+  res <- read_release_json(
     venue_id,
     tag = 'venue-info'
   )
+  
+  res[['venue_id']] <- venue_id
+  if (length(res) == 0) {
+    return(res)
+  }
+  
+  res$updated_at <- lubridate::ymd_hms(res$updated_at)
+  res
 }
 
 possibly_read_venue_info <- purrr::possibly(
@@ -696,6 +704,11 @@ judiciously_scrape_venue_info <- function() {
     new_venue_ids,
     \(venue_id, i) {
       cli::cli_inform('Scraping {i}/{n_venues} venues.')
+      if (TRUE) {
+        return(
+          possibly_read_venue_info(venue_id)
+        )
+      }
       is_nth_interval_to_check_for_limit <- i %% 10 == 0
       if (isTRUE(is_nth_interval_to_check_for_limit)) {
         remaining_requests <- retrieve_remaining_requests()
