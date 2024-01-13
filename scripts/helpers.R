@@ -677,14 +677,18 @@ retrieve_remaining_requests <- function() {
 
 ## Different strategy compared to quiz results:
 ## -  Check against stashed CSV and never re-scrape.
-judiciously_scrape_venue_info <- function() {
+judiciously_scrape_venue_info <- function(overwrite = TRUE) {
   existing_quiz_result_releases <- possibly_list_releases('venue-quiz-results')
   existing_venue_info_releases <- possibly_list_releases('venue-info')
   
-  new_venue_ids <- setdiff(
-    existing_quiz_result_releases[['venue_id']],
-    existing_venue_info_releases[['venue_id']]
-  )
+  new_venue_ids <- if (overwrite) {
+    setdiff(
+      existing_quiz_result_releases[['venue_id']],
+      existing_venue_info_releases[['venue_id']]
+    )
+  } else {
+    existing_quiz_result_releases[['venue_id']]
+  }
   
   existing_venue_info <- possibly_read_release_csv(
     name = 'venue-info',
