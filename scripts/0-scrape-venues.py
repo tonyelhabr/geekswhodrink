@@ -7,7 +7,6 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 import chromedriver_autoinstaller
-from datetime import datetime
 from urllib.parse import urlencode, urlunparse
 from dotenv import load_dotenv
 import time
@@ -68,8 +67,5 @@ for result in results:
 
 venues = pd.DataFrame(data)
 driver.quit()
-
-current_time = datetime.now()
-venues["updated_at"] = current_time.strftime("%Y-%m-%d %H:%M:%S")
 
 create_or_update_geekswhodrink_release(df=venues, file_name="venues.csv")

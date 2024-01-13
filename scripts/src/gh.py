@@ -10,7 +10,7 @@ def create_or_update_release(
     df: str,
     file_name: str,
     repo_name: str,
-    f_dedup,
+    f_update,
     env_var_name: str = "GITHUB_ACCESS_TOKEN",
     tag: str = "v1.0.0",
     description: str = "Description of release",
@@ -52,17 +52,15 @@ def create_or_update_release(
             if existing_data_file:
                 print("Combining new data with data existing in release.")
                 response = requests.get(existing_data_file.browser_download_url)
-                existing_data = pd.read_csv(StringIO(response.text), dtype="object")
-                combined_data = pd.concat([existing_data, df], ignore_index=True)
+                existing_df = pd.read_csv(StringIO(response.text), dtype="object")
+                updated_df = f_update(existing_df, df)
                 existing_data_file.delete_asset()
             else:
                 print("No existing data in release. Uploading new data.")
-                combined_data = df
-
-            deduped_data = f_dedup(combined_data)
+                updated_df = df
 
             csv_file = StringIO()
-            deduped_data.to_csv(csv_file, index=False)
+            updated_df.to_csv(csv_file, index=False)
             file_content = csv_file.getvalue().encode()
 
         except GithubException as e:
