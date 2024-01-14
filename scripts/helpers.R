@@ -100,11 +100,16 @@ convert_quiz_results_list_to_df <- function(x) {
 }
 
 read_venue_quiz_results <- function(venue_id) {
-  res <- read_release_json(
+  raw <- read_release_json(
     name = venue_id,
     tag = 'venue-quiz-results'
   )
-  convert_quiz_results_list_to_df(res)
+  if (rlang::is_empty(raw)) {
+    return(raw)
+  }
+  res <- convert_quiz_results_list_to_df(raw)
+  res$venue_id <- venue_id
+  res
 }
 
 safely_read_venue_quiz_results <- purrr::safely(
@@ -399,9 +404,13 @@ judiciously_scrape_venue_quiz_results <- function(
   ## TODO: Coalesce logic for file with 0 rows and no existing file.
   ## Note that we use && instead of & to "escape early" in the case that reading in the file
   ##   encountered an error.
-  existing_has_zero_records <- isTRUE(release_file_exists) && (nrow(existing_quiz_results) == 0)
-  if (isFALSE(release_file_exists) | isTRUE(existing_has_zero_records)) {
-    cli::cli_warn('No existing release file for {.var venue_id} = {.val {venue_id}} .')
+  existing_has_zero_records <- isTRUE(release_file_exists) && (length(existing_quiz_results) == 0)
+  if (isFALSE(release_file_exists)) {
+    cli::cli_warn('No existing release file for {.var venue_id} = {.val {venue_id}}.')
+    existing_quiz_results <- NULL
+    has_existing_quiz_results <- FALSE
+  } else if (isTRUE(existing_has_zero_records)) {
+    cli::cli_warn('Existing relesae file for {.var venue_id} = {.val {venue_id}} has 0 records.')
     existing_quiz_results <- NULL
     has_existing_quiz_results <- FALSE
   } else {
@@ -437,7 +446,7 @@ judiciously_scrape_venue_quiz_results <- function(
   ##   Note that this may not really be necessary if we're already checking for recency
   ##   outside of this function.
   if (isTRUE(has_existing_quiz_results) & isFALSE(try_if_recently_scraped)) {
-    max_updated_at <- max(existing_quiz_results$updated_at)
+    max_updated_at <- max(dplyr::coalesce(existing_quiz_results[['updated_at']], lubridate::ymd_hms('1970-01-01 00:00:00')))
     
     should_try_scraping <- (max_updated_at + recent_scrape_window) < TIMESTAMP
     if (isFALSE(should_try_scraping)) {
@@ -466,16 +475,20 @@ judiciously_scrape_venue_quiz_results <- function(
           existing_quiz_results,
           venue_id
         )
-        return(existing_quiz_results)
+        return(data.frame())
       } else {
-        cli::cli_inform(c('i' = 'Returning NULL for an unexpected reason. TODO: Look into this.'))
+        cli::cli_inform(c('i' = 'Over-writing quiz results file with 0 records, again with 0 records.'))
         ## could just return existing_quiz_results if it were a data.frame
-        return(NULL)
+        write_venue_quiz_results(
+          data.frame(),
+          venue_id
+        )
+        return(data.frame())
       }
     }
   }
   
-  res$updated_at <- TIMESTAMP
+  res[['updated_at']] <- TIMESTAMP
   
   res <- dplyr::bind_rows(
     existing_quiz_results,
@@ -507,11 +520,13 @@ judiciously_scrape_x_venue_quiz_results <- function(venue_ids, descriptor) {
   purrr::imap_dfr(
     venue_ids,
     \(venue_id, i) {
+      
       cli::cli_inform('Scraping {i}/{n_venues} {descriptor} venues.')
+      
       is_nth_interval_to_check_for_limit <- i %% 10 == 0
       if (isTRUE(is_nth_interval_to_check_for_limit)) {
         remaining_requests <- retrieve_remaining_requests()
-        print(remaining_requests)
+
         if (remaining_requests < 100L) {
           cli::cli_inform('Skipping {venue_id} early because we are nearing the GitHub API request limit.')
           return(
@@ -527,19 +542,28 @@ judiciously_scrape_x_venue_quiz_results <- function(venue_ids, descriptor) {
           possibly_read_venue_quiz_results(venue_id)
         )
       }
-      judiciously_scrape_venue_quiz_results(
+      
+      ## Create better logic for handling zero-row case
+      res <- judiciously_scrape_venue_quiz_results(
         venue_id, 
-        try_if_existing_has_zero_records = TRUE
-      ) |> 
-        dplyr::mutate(
-          venue_id = .env$venue_id,
-          .before = 1
-        )
+        try_if_existing_has_zero_records = FALSE
+      )
+      
+      if (nrow(res) == 0) {
+        return(res)
+      }
+      
+      dplyr::mutate(
+        res,
+        venue_id = .env$venue_id,
+        .before = 1
+      )
     }
   )
 }
 
-judiciously_scrape_stale_venue_quiz_results <- function() {
+judiciously_scrape_stale_venue_quiz_results <- function(venues) {
+  
   existing_results_files <- possibly_list_releases('venue-quiz-results')
   
   existing_results_files_needing_update <- dplyr::filter(
@@ -547,10 +571,13 @@ judiciously_scrape_stale_venue_quiz_results <- function() {
     timestamp < (lubridate::today() - lubridate::days(STALE_QUIZ_RESULTS_DURATION))
   )
   
-  stale_venue_ids <- existing_results_files_needing_update$venue_id
+  stale_venue_ids <- intersect(
+    existing_results_files_needing_update$venue_id,
+    venues$venue_id
+  )
   
   # cli::cli_inform('Reading in existing quiz results')
-  venue_ids_not_needing_update <- setdiff(existing_results_files$venue_id, stale_venue_ids)
+  venue_ids_not_needing_update <- setdiff(venues$venue_id, stale_venue_ids)
   # existing_results <- purrr::imap_dfr(
   #   venue_ids_not_needing_update,
   #   \(venue_id, i) {
@@ -597,8 +624,7 @@ judiciously_scrape_stale_venue_quiz_results <- function() {
   all_results
 }
 
-judiciously_scrape_new_venue_quiz_results <- function() {
-  venues <- read_release_csv('venues')
+judiciously_scrape_new_venue_quiz_results <- function(venues) {
   
   existing_results <- possibly_list_releases('venue-quiz-results')
   
@@ -677,18 +703,19 @@ retrieve_remaining_requests <- function() {
 
 ## Different strategy compared to quiz results:
 ## -  Check against stashed CSV and never re-scrape.
-judiciously_scrape_venue_info <- function(overwrite = TRUE) {
+judiciously_scrape_venue_info <- function(venues) {
   existing_quiz_result_releases <- possibly_list_releases('venue-quiz-results')
   existing_venue_info_releases <- possibly_list_releases('venue-info')
   
-  new_venue_ids <- if (overwrite) {
-    setdiff(
+  new_venue_ids <- setdiff(
       existing_quiz_result_releases[['venue_id']],
       existing_venue_info_releases[['venue_id']]
     )
-  } else {
-    existing_quiz_result_releases[['venue_id']]
-  }
+  
+  new_venue_ids <- intersect(
+    new_venue_ids,
+    venues$venue_id
+  )
   
   existing_venue_info <- possibly_read_release_csv(
     name = 'venue-info',
@@ -708,11 +735,12 @@ judiciously_scrape_venue_info <- function(overwrite = TRUE) {
     new_venue_ids,
     \(venue_id, i) {
       cli::cli_inform('Scraping {i}/{n_venues} venues.')
-      if (TRUE) {
-        return(
-          possibly_read_venue_info(venue_id)
-        )
-      }
+      # if (TRUE) {
+      #   return(
+      #     possibly_read_venue_info(venue_id)
+      #   )
+      # }
+      
       is_nth_interval_to_check_for_limit <- i %% 10 == 0
       if (isTRUE(is_nth_interval_to_check_for_limit)) {
         remaining_requests <- retrieve_remaining_requests()
@@ -731,6 +759,7 @@ judiciously_scrape_venue_info <- function(overwrite = TRUE) {
           possibly_read_venue_info(venue_id)
         )
       }
+      
       res <- scrape_and_write_venue_info(venue_id)
       res[['venue_id']] <- venue_id
       res
