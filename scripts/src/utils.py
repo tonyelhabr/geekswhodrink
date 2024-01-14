@@ -19,9 +19,10 @@ def combine_venue_dfs(existing_df: pd.DataFrame, new_df: pd.DataFrame) -> pd.Dat
     existing_df.loc[
         existing_df["venue_id"].isin(new_df["venue_id"]), "updated_at"
     ] = current_timestamp
-    existing_df.loc[
-        ~existing_df["venue_id"].isin(new_df["venue_id"]), "updated_at"
-    ] = None
+    ## Set updated_at for venues no longer existing to null
+    # existing_df.loc[
+    #     ~existing_df["venue_id"].isin(new_df["venue_id"]), "updated_at"
+    # ] = None
 
     new_records = new_df[~new_df["venue_id"].isin(existing_df["venue_id"])]
     new_records["created_at"] = current_timestamp
