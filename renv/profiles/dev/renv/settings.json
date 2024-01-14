@@ -3,9 +3,6 @@
   "external.libraries": [],
   "ignored.packages": [
     "htmltools",
-    "leaflet", 
-    "reactable", 
-    "rmarkdown",
     "yaml"
   ],
   "package.dependency.fields": [

@@ -1,4 +1,5 @@
 source(file.path('scripts', 'helpers.R'))
+library(htmltools)
 
 convert_10_digit_zip_to_5_digit_zip <- function(x) {
   stringr::str_remove(x, '-[0-9]{4}$')
